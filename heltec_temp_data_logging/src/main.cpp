@@ -1,9 +1,6 @@
 /* The script reads temperature and humidity from DHT11 sensor and shows these data on the monitor. Then, it sends these data to google drive sheets.
 All linraries are stored manually in lib folder pulled from https://github.com/HelTecAutomation/Heltec_ESP32 .*/
 
-
-
-
 #include "heltec.h" // for the microcontroller.
 #include "WiFi.h"
 #include "images.h" // Imported locally in lib folder. Stored in /Users/stratos/Documents/PlatformIO/Projects/images.h
@@ -18,12 +15,15 @@ float humidity;
 float tempC;
 
 const unsigned long SECOND = 1000;
+const unsigned long SLEEP_SECOND = 1000000;
 const unsigned long HOUR = 3600*SECOND;
-unsigned long dt = 0.5*HOUR;
+const unsigned long SLEEP_HOUR = 3600*SLEEP_SECOND;
+unsigned long sleep_time = 0.5*SLEEP_HOUR;
+unsigned long dt = 12*SECOND;
 
 String SSID   = "WLAN-311316";
 String PSW    = "2857576042500438";
-String GAS_ID = "AKfycbxUA-iFyShhg8ORREHtRwJY3jWFqtpLwfCxj5u_L8ysTNN8HFssBa_zSQnCJSAAP6sN"; // Google ID sheet.
+String GAS_ID = "AKfycbxhdXbhVL4pjNC4xwT1gFqSCmHLZ7Uo11lyQbj8CKKSoI--7_W1r9RgF_qekmOJE0-U"; // Google ID sheet.
 
 WiFiClientSecure client;
 
@@ -84,9 +84,11 @@ void message()
 	Heltec.display -> drawString(25, 25, "Starting all routines.");
   	Heltec.display -> display();
 	
-	delay(2000);
+	delay(1000);
 	//esp_deep_sleep_start(); // For deepsleep. Maybe for battery usage.
 
+	// put LED down to show message routine ended 
+	digitalWrite(LED,LOW);
 } 
 
 
@@ -111,21 +113,10 @@ void displayReadingsOnOled() {
 
 }
 
-void setup()
-{
-    message();
-    delay(2000);
-	WIFISetUp();
-    delay(300);
-	Heltec.display->clear();
-   	HT.begin();
-
-}
-
 // Sending data to google sheet.
 void spreadsheet_comm() {
    HTTPClient http;
-   String url="https://script.google.com/macros/s/"+GAS_ID+"/exec?temperature=" + (String)tempC + "&humidity=" + (String)humidity;
+   String url="https://script.google.com/macros/s/"+GAS_ID+"/exec?temp_1=" + (String)tempC + "&hum_1=" + (String)humidity;
 //   Serial.print(url);
 	Serial.print("Making a request");
 	http.begin(url.c_str()); //Specify the URL and certificate
@@ -147,11 +138,30 @@ void spreadsheet_comm() {
 	http.end();
 }
 
-void loop()
-{   
+//Only the setup code will be executed. This is a deepsleep friendly code.
+
+void setup()
+{
+	esp_sleep_enable_timer_wakeup(sleep_time);
+    message();
+	WIFISetUp();
+	Heltec.display->clear();
+   	HT.begin();
 	displayReadingsOnOled();
   	spreadsheet_comm();
-	delay(dt);
+	delay(500);
+	Heltec.display->clear();
+	Heltec.display -> drawString(15,30,"Going to sleep now...");
+	Heltec.display->display();
+	delay(800);
+	esp_deep_sleep_start();
+
+}
+
+
+void loop()
+{   
+	
 }
 
 
