@@ -1,5 +1,10 @@
 /* The script reads temperature and humidity from DHT11 sensor and shows these data on the monitor. Then, it sends these data to google drive sheets.
-All linraries are stored manually in lib folder pulled from https://github.com/HelTecAutomation/Heltec_ESP32 .*/
+All linraries are stored manually in lib folder pulled from https://github.com/HelTecAutomation/Heltec_ESP32 .
+
+This is not a battery friendly code. I use it to operate only inside the house, showing the temperature on the screen and send data every hour
+to a new google sheet only for inside. 
+
+*/
 
 #include "heltec.h" // for the microcontroller.
 #include "WiFi.h"
@@ -18,12 +23,12 @@ const unsigned long SECOND = 1000;
 const unsigned long SLEEP_SECOND = 1000000;
 const unsigned long HOUR = 3600*SECOND;
 const unsigned long SLEEP_HOUR = 3600*SLEEP_SECOND;
-unsigned long sleep_time = 0.5*SLEEP_HOUR;
-unsigned long dt = 12*SECOND;
+unsigned long sleep_time = 10*SLEEP_SECOND;
+unsigned long dt = 1*HOUR;
 
 String SSID   = "WLAN-311316";
 String PSW    = "2857576042500438";
-String GAS_ID = "AKfycbxhdXbhVL4pjNC4xwT1gFqSCmHLZ7Uo11lyQbj8CKKSoI--7_W1r9RgF_qekmOJE0-U"; // Google ID sheet.
+String GAS_ID = "AKfycbyYM2OZwEhYzCFNuDq9kZhRpH0vnA_ZOADaA5SmiAaEY7nmsyMn0MhksvgD0c-9kSHnTw"; // Google deployment ID sheet.
 
 WiFiClientSecure client;
 
@@ -34,14 +39,14 @@ void WIFISetUp(void)
 {
 	// Set WiFi to station mode and disconnect from an AP if it was previously connected
 	WiFi.disconnect(true);
-	delay(1000);
+	delay(500);
 	WiFi.mode(WIFI_STA);
 	WiFi.setAutoConnect(true);
 	WiFi.begin("WLAN-311316","2857576042500438");
-	delay(100);
+	//delay(100);
 
 	byte count = 0;
-	while(WiFi.status() != WL_CONNECTED && count < 10)
+	while(WiFi.status() != WL_CONNECTED && count < 20)
 	{
 		count ++;
 		delay(500);
@@ -63,33 +68,14 @@ void WIFISetUp(void)
 		Heltec.display -> display();
 		//while(1);
 	}
-	Heltec.display -> drawString(0, 10, "WiFi Setup done.");
-	Heltec.display -> display();
-	delay(500);
+	//Heltec.display -> drawString(0, 10, "WiFi Setup done.");
+	//Heltec.display -> display();
+	//delay(500);
 }
 
 
 
 // Activates the led and screen, display message that all start.
-void message()
-{
-    pinMode(LED,OUTPUT);
-	digitalWrite(LED,HIGH);
-
-	Heltec.begin(true /*DisplayEnable Enable*/, false /*LoRa Enable*/, true /*Serial Enable*/);
-
-	delay(300);
-	Heltec.display->clear();
-    //Heltec.display -> drawString(0, 10, "Hello world, finally.");
-	Heltec.display -> drawString(25, 25, "Starting all routines.");
-  	Heltec.display -> display();
-	
-	delay(1000);
-	//esp_deep_sleep_start(); // For deepsleep. Maybe for battery usage.
-
-	// put LED down to show message routine ended 
-	digitalWrite(LED,LOW);
-} 
 
 
 // Displaying data on the screen.
@@ -99,24 +85,25 @@ void displayReadingsOnOled() {
 	//Serial.print(humidity);
 	//Serial.println(tempC);
    
-  String temperatureDisplay ="Temperature: " + (String)tempC +  "°C";
-  String humidityDisplay = "Humidity: " + (String)humidity + "%";
+  String temperatureDisplay ="Temp: " + (String)tempC +  "°C";
+  String humidityDisplay = "Hum: " + (String)humidity + "%";
  
   // Clear the OLED screen
   Heltec.display->clear();
   // Prepare to display temperature
   Heltec.display->drawString(0, 0, temperatureDisplay);
   // Prepare to display humidity
-  Heltec.display->drawString(0, 12, humidityDisplay);
+  Heltec.display->drawString(0, 20, humidityDisplay);
   // Display the readings
   Heltec.display->display();
+  delay(1000);
 
 }
 
 // Sending data to google sheet.
 void spreadsheet_comm() {
    HTTPClient http;
-   String url="https://script.google.com/macros/s/"+GAS_ID+"/exec?temp_1=" + (String)tempC + "&hum_1=" + (String)humidity;
+   String url="https://script.google.com/macros/s/"+GAS_ID+"/exec?temperature=" + (String)tempC + "&humidity=" + (String)humidity;
 //   Serial.print(url);
 	Serial.print("Making a request");
 	http.begin(url.c_str()); //Specify the URL and certificate
@@ -129,7 +116,7 @@ void spreadsheet_comm() {
        // Heltec.display -> drawString(20,20,(String)httpCode);
         //Heltec.display -> drawString(20,40,payload);
 		Heltec.display -> display();
-
+		  delay(1000);
         //testdrawstyles(payload);
       }
     else {
@@ -138,30 +125,40 @@ void spreadsheet_comm() {
 	http.end();
 }
 
-//Only the setup code will be executed. This is a deepsleep friendly code.
 
 void setup()
 {
-	esp_sleep_enable_timer_wakeup(sleep_time);
-    message();
-	WIFISetUp();
-	Heltec.display->clear();
+	pinMode(LED,OUTPUT);
+	//digitalWrite(LED,HIGH);
+	//esp_sleep_enable_timer_wakeup(sleep_time);
    	HT.begin();
-	displayReadingsOnOled();
-  	spreadsheet_comm();
-	delay(500);
-	Heltec.display->clear();
-	Heltec.display -> drawString(15,30,"Going to sleep now...");
+	Heltec.begin(true /*DisplayEnable Enable*/, false /*LoRa Enable*/, true /*Serial Enable*/);
+	//delay(300);
+	Heltec.display->setFont(ArialMT_Plain_16); // Change the font	
+	Heltec.display -> drawString(40,40,"Sending data");
 	Heltec.display->display();
-	delay(800);
-	esp_deep_sleep_start();
+  // Prepare to display humidity
+	displayReadingsOnOled();
+	//delay(500);
+	Heltec.display->display();
+	//delay(800);
+	//digitalWrite(LED,LOW);
+	//esp_deep_sleep_start();
+
 
 }
 
 
 void loop()
 {   
-	
+	displayReadingsOnOled();
+	WIFISetUp();
+	digitalWrite(LED,HIGH);
+	spreadsheet_comm();
+	digitalWrite(LED,LOW);
+	displayReadingsOnOled();
+	delay(dt);
+
 }
 
 
