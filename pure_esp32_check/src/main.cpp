@@ -7,6 +7,9 @@
 
 Adafruit_BME280 bme;
 
+
+/*Comment out all delay routines for battery efficiency!*/
+
 float tempC;
 float humidity;
 float pressure;
@@ -18,12 +21,12 @@ const unsigned long SECOND = 1000;
 const unsigned long SLEEP_SECOND = 1000000;
 const unsigned long HOUR = 3600*SECOND;
 const unsigned long SLEEP_HOUR = 3600*SLEEP_SECOND;
-unsigned long sleep_time = 0.5*SLEEP_HOUR;
-unsigned long dt = 0.5*HOUR;
+unsigned long sleep_time = 1*SLEEP_HOUR;
+unsigned long dt = 1*HOUR;
 
 String SSID   = "WLAN-311316";
 String PSW    = "2857576042500438";
-String GAS_ID = "AKfycbzs1gGCy5Jp2S0hVMPXvlbR8ByMu3iaJ7ZnSXERtCQCKqb2ZDQDGs3dCzXeBQeDqf9_"; // Google ID sheet.
+String GAS_ID = "AKfycbxqKnCtNS1ZKv43bwDMMpCnWvw3ceCSqV6lmdfqmaZ_g08iNSyZ_tSkzrEvRR0V_L8t"; // Google ID sheet.
 
 WiFiClientSecure client;
 
@@ -32,11 +35,11 @@ void WIFISetUp(void)
 {
 	// Set WiFi to station mode and disconnect from an AP if it was previously connected
 	WiFi.disconnect(true);
-	delay(1000);
+	delay(500);
 	WiFi.mode(WIFI_STA);
 	WiFi.setAutoConnect(true);
 	WiFi.begin("WLAN-311316","2857576042500438");
-	delay(100);
+	//delay(100);
 
 	byte count = 0;
 	while(WiFi.status() != WL_CONNECTED && count < 10)
@@ -56,8 +59,8 @@ void WIFISetUp(void)
 		Serial.println("Failed to connect.");
 		}
 
-	Serial.println("WiFi Setup done.");
-	delay(500);
+	//Serial.println("WiFi Setup done.");
+	//delay(100);
 }
 
 
@@ -91,6 +94,7 @@ void setup(){
     rain =analogRead(4);
 	digitalWrite(LED_BUILTIN, HIGH);
     WIFISetUp();
+    //delay(500);
 	esp_sleep_enable_timer_wakeup(sleep_time);
 	tempC = bme.readTemperature();
     humidity = bme.readHumidity();
@@ -108,7 +112,8 @@ void setup(){
     Serial.print(rain);
     Serial.println(" : ");
     spreadsheet_comm();
-	delay(3000);
+	///delay(3000);
+   delay(500);
 	digitalWrite(LED_BUILTIN, LOW);
   	esp_deep_sleep_start();
 
