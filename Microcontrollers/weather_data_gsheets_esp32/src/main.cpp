@@ -39,8 +39,8 @@ unsigned long dt = 1*SECOND;
 #define send_data true
 
 String SSID   = "Home 2.4G";
-String PSW    = ""; //Wifi password inside
-String GAS_ID = ""; // Deployment ID. It can be found within your google sheet
+String PSW    = "your wifi password";
+String GAS_ID = "google sheet  ID"; // Deployment ID. Can be found via google sheet.
 WiFiClientSecure client;
 
 
@@ -54,7 +54,7 @@ void WIFISetUp(void)
 	delay(500);
 	WiFi.mode(WIFI_STA);
 	WiFi.setAutoConnect(true);
-	WiFi.begin("Home 2.4G",""); // after comma fill your wifi password
+	WiFi.begin("Home 2.4G","your wifi password");
 	//delay(100);
 
 	byte count = 0;
@@ -75,9 +75,6 @@ void WIFISetUp(void)
 		Serial.println("Failed to connect.");
 
 		}
-
-	//Serial.println("WiFi Setup done.");
-	//delay(100);
 }
 
 
@@ -115,34 +112,18 @@ void setup(){
     Serial.print(wind);
     bat_voltage = (4.20*bat_reading)/2312.00; // assumes 2 100kOhm resistors connected, Vout=Vin*R2/(R1+R2). Here Vin=bat_voltage and Vout the one which goes to the pin.
 	  #if send_data
-    digitalWrite(LED_BUILTIN, HIGH);
-    WIFISetUp();
-    //delay(500);
-	  esp_sleep_enable_timer_wakeup(sleep_time);
-	  tempC = bme.readTemperature();
-    humidity = bme.readHumidity();
-    pressure = bme.readPressure()/100;
-    /*
-    Serial.print("Humidity: ");
-    Serial.print(humidity);
-    Serial.print(" %");
-    Serial.print(" Temperature: ");
-    Serial.print(tempC);
-    Serial.print(" C: ");
-    Serial.print(" Pressure: ");
-    Serial.print(pressure);
-    Serial.print(" hPa: ");
-    Serial.print(" Rain: ");
-    Serial.print(rain);
-    Serial.print(" Voltage: ");
-    Serial.println(bat_voltage);
-    */
-    spreadsheet_comm();
-	///delay(3000);
-   delay(500);
-	digitalWrite(LED_BUILTIN, LOW);
-  	esp_deep_sleep_start();
-  #endif
+      digitalWrite(LED_BUILTIN, HIGH);
+      WIFISetUp();
+      //delay(500);
+      esp_sleep_enable_timer_wakeup(sleep_time);
+      tempC = bme.readTemperature();
+      humidity = bme.readHumidity();
+      pressure = bme.readPressure()/100;
+      spreadsheet_comm();
+      delay(500);
+      digitalWrite(LED_BUILTIN, LOW);
+      esp_deep_sleep_start();
+    #endif
 
 }
 
