@@ -1,0 +1,1 @@
+A solar powered esp32, connects to the wifi and transmits weather data such as temperature, humidity, pressure, rain and wind on a google sheet.   
