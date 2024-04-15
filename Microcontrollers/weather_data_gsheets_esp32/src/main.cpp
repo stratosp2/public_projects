@@ -39,8 +39,8 @@ unsigned long dt = 1*SECOND;
 #define send_data true
 
 String SSID   = "WIFI_SSID_REDACTED";
-String PSW    = "WIFI_PASSWORD_REDACTED";
-String GAS_ID = "AKfycbxo5WGfeOYbza1QOP-pdq6Z4p6MDedGZjfIJtiNTWMk4RoTaAXlslUsoZIkh5YoSs1v"; // Deployment ID.
+String PSW    = ""; //Wifi password inside
+String GAS_ID = ""; // Deployment ID. It can be found within your google sheet
 WiFiClientSecure client;
 
 
@@ -54,7 +54,7 @@ void WIFISetUp(void)
 	delay(500);
 	WiFi.mode(WIFI_STA);
 	WiFi.setAutoConnect(true);
-	WiFi.begin("WIFI_SSID_REDACTED","WIFI_PASSWORD_REDACTED");
+	WiFi.begin("WIFI_SSID_REDACTED",""); // after comma fill your wifi password
 	//delay(100);
 
 	byte count = 0;
