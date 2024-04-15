@@ -1,0 +1,1 @@
+This is a simple automated R script to pull the rate exchange of AUD to EUR, do some elementary econometric analysis and use ARIMA to do forecasts. 
