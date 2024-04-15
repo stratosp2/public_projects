@@ -1,0 +1,1 @@
+A python script scrapes data for the price of olive oil from a website. It stores these data as a csv file and then a R script runs a data analysis and some basic forecasts for the price.   
