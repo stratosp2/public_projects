@@ -1,0 +1,1 @@
+A solar powered esp32, controls temperature, humidity, pressure, rain and wind sensors. It remains in deep sleep and wakes up every hour, takes the measurements, connects to the wifi and logs the data in a google sheet.
