@@ -1,8 +1,0 @@
-﻿ 											
-A plan for the GPS Arduino adventure.  
-
-	•	Get two GPS modules compatible with microcontrollers. (DONE)
-	•	Each gets one and test locally on Arduino. Then we share a common code via git. (DONE) 
-	•	Once we make it work and are satisfied we can make more out of it, e.g battery operated, integrate a small screen, hook it with my esp32 or similar, store data in sd cards and analyse later, etc. (DONE) 
-
-
