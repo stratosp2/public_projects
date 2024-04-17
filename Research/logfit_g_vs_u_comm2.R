@@ -5,14 +5,6 @@ args = commandArgs(trailingOnly=TRUE)
 if (length(args)==0) {
   stop("At least one argument must be supplied (input file).n", call.=FALSE)
 } 
-#else if (length(args)==1) {
-# default output file
-#  args[2] = "out.txt"
-#}
-
-# Additions needed: 
-# - dtau files shoudl be displayed and plotted 
-
 
 
 
@@ -30,16 +22,12 @@ column_labels <- c("temp", "flux", "energy", "s_trx2","comm2", "N")
 
 plot_labels <- c("comm2")
 
-#plot_labels <- c("CG_it", "energy", "Polyak", "s_trx2", "trx2(1)", "trx2(2)", "trx2(3)", "trx2(4)", "trx2(5)", "trx2(6)", "trx2(7)", "trx2(8)", "trx2(9)", "comm2","Myers","accept", "dt_x", "dt_a", "m5")
-
 
 
 plot_labels_dtau <- c("dt_x", "dt_a")
 
 column_labels_dtau <- c("itraj", "dt_x", "dt_a")
 
-
-#temperatures <- c("0.1","0.12","0.14","0.16","0.18","0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0", "1.1", "1.2", "1.3", "1.4", "1.5")
 
 temperatures <- c("0.1","0.12","0.16","0,18", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8", "0.9", "1.0", "1.1")
 
@@ -149,8 +137,6 @@ for(fluxloop in fluxes) {
     
     plotlabel=p("large_cont_log_g_vs_u_", plot_loop, "    M = ", fluxloop)
     
-    #distinct() to remove dublicate rows from readed data
-    
     database_mean_flux_g <- distinct(database_mean_g[database_mean_g$flux==as.numeric(as.character(fluxloop)), ])
     database_sd_flux_g <- distinct(database_sd_g[database_sd_g$flux==as.numeric(as.character(fluxloop)), ])
     
@@ -195,16 +181,10 @@ for(fluxloop in fluxes) {
     
     
     log_sd <- 0.434*sd/(-database_mean_flux_g[,plot_loop]+database_mean_flux_u[,plot_loop])
-    
-    #y_min <- log(abs(-database_mean_flux_g[,plot_loop] + database_mean_flux_u[,plot_loop])-sd)
-   
+  
     y_min <- Log_E-sd
     y_max <- Log_E+sd
-    #y_min <- Log_E-log_sd
-    #y_max <- Log_E+log_sd
-    
-    #y_max <- log(abs(-database_mean_flux_g[,plot_loop]+database_mean_flux_u[,plot_loop])+ sd)
-    
+   
     T <- (database_mean_flux_g[,"temp"])^(-1)
     
     w <- abs(Log_E/log_sd^2)
@@ -232,10 +212,7 @@ for(fluxloop in fluxes) {
         geom_smooth(data=subset(data, T >= 0), method='lm', mapping = aes(weight = w),  color  ='red',se=T)+
         annotate("label", x = min(data$x)-0.5, y = min(data$y)-0.5, vjust = 5.0, hjust = 4, label =p("RSE=",rse), color="red", size = 4.0, parse=F, fill = "#FFCC66")
       
-      #regression <- lm(Log_E ~ T, data <- subset(data, T >=5  & T<= 10), w=Log_E/log_sd^2)
-      
-      #sum <- summary(regression)
-      
+     
       print(sum)
       
       
@@ -271,9 +248,6 @@ for(fluxloop in fluxes) {
         labs(title="N ="~infinity~", L ="~infinity~","~mu~"= 2", x="1/T", y=expression(Log~Delta~F^2/N^2))+ #stat_function(fun=eq)+
         geom_smooth(data=subset(data, T > 2 & T<10), method='lm', mapping = NULL,size=0.7, color  ='red',se=T)+
         theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))#+
-      # annotate("label", x = min(data$x)-0.5, y = min(data$y)-0.5, vjust = 5.0, hjust = 4, label =p("RSE=",rse), color="red", size = 4.0, parse=F, fill = "#FFCC66")
-      
-      #+annotate("text", x = 3, y = 2, label = eq, color="red", size = 5, parse=FALSE)
       
       
       
@@ -299,8 +273,7 @@ for(fluxloop in fluxes) {
         geom_point(data=subset(data, T >= 0))+labs(title="N ="~infinity~", L ="~infinity~","~mu~"= 3", x="1/T", y=expression(Log~Delta~F^2/N^2))+ #stat_function(fun=eq)+
         geom_smooth(data=subset(data, T >= 0), method='lm', mapping = aes(weight = w),size=0.7,  color  ='red',se=T)+
         theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))#+
-      # annotate("label", x = min(data$x)-0.5, y = min(data$y)-0.5, vjust = 5.0, hjust = 4, label =p("RSE=",rse), color="red", size = 4.0, parse=F, fill = "#FFCC66")
-      
+     
       
       
       
@@ -329,21 +302,7 @@ for(fluxloop in fluxes) {
         geom_point(data=subset(data, T >= 0))+labs(title="N ="~infinity~", L ="~infinity~","~mu~"= 4", x="1/T", y=expression(Log~Delta~F^2/N^2))+ #stat_function(fun=eq)+
         geom_smooth(data=subset(data, T >= 0), method='lm', mapping = aes(weight = w),size=0.7,  color  ='red',se=T)+
         theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16)) #+
-      #annotate("label", x = min(data$x)-0.5, y = min(data$y)-0.5, vjust = 5.0, hjust = 4, label =p("RSE=",rse), color="red", size = 4.0, parse=F, fill = "#FFCC66")
-      
-      
-      
-      
-      
-      
-      #regression <- lm(Log_E ~ T, data <- subset(data, T >= 1), weights <- w)
-      
-      #print(T_limit)
-      
-      #coefficients <- coef(regression)
-      
-      #print (coefficients)
-      
+     
       
     }
     
@@ -423,9 +382,7 @@ eq1 <- function(x) b-a*x
 ggplot(C_mu, aes(x=results[,1],y=results[,2]),add="reg.line") + 
   geom_errorbar(aes(x=results[,1], width= 0.1,  ymin=results[,2]-results[,3], ymax=results[,2]+results[,3]), color ="blue") +
   geom_point(data=C_mu)+labs(title= "Large N, Continuous", x=expression(mu), y="C")+
-  theme(text = element_text(size=15))+ theme(axis.text=element_text(size=13))#+stat_function(fun=eq1)
-
-
+  theme(text = element_text(size=15))+ theme(axis.text=element_text(size=13))
 
 ggsave(C_mu_file)
 

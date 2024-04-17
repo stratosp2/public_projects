@@ -88,17 +88,12 @@ printf("\n")
 
 printf("Looking for files in current directory matching %s\n\n", file_pattern_read)
 
-# Get list of files to include in data
-#files_out <- list.files(pattern=file_pattern_read, full.names=TRUE, recursive=FALSE)
 
 
 
 files_to_read <- Sys.glob(file_pattern_read)
 
 rbind(files_to_read)
-
-# Remove already extrapolated data from previous run
-#files_to_read <- files_to_read[!grepl( "Soo", files_to_read, fixed = TRUE)]
 
 
 printf("Found the following files:\n")
@@ -125,11 +120,6 @@ all_data <- foreach(i=1:length(files_to_read), .combine=rbind) %do% {
 }
 printf("\nDone reading.\n\n")
 
-#print(all_data)
-
-# Remove all observables not contained in plot_labels
-#all_data <- all_data[ %in% plot_labels]
-
 
 all_data <- na.omit(unique(data.frame(all_data[,"M"], all_data[,"S2"],all_data[,"error_S2"], all_data[,"S5"], all_data[,"error_S5"], all_data[,"comm2"],all_data[,"comm2_error"])))
 
@@ -138,7 +128,7 @@ print(all_data)
 
 n_obs <- length(plot_labels)
 
-#all_data[,"M"]
+
 
 mu_list <- all_data[,"M"]
 printf("mu list extracted as\n")
@@ -192,7 +182,6 @@ linear <- function(x, u.values){
 
 
 # create small mu extrapolation
-#for(i in 1:n_obs) {
   data_i<- all_data
   data_i <- subset(data_i, data_i$M>=smallest_mu)
   num_mu_fit <- length(mu_list[mu_list >= smallest_mu])
@@ -210,16 +199,13 @@ comm_error_min <-  (data_i$comm2-error_scale*data_i$comm2_error)
 comm_error_max <-  (data_i$comm2+error_scale*data_i$comm2_error) 
 
 
-#x_label <- expression(mu)
 
 bar_width = 0.05
 
 eq1<- function(x) 15/x+15*1/x^2
-#eq2<- function(x) 15/x^2
 
-myplot <- ggplot(aes(x=M, y=S2, colour="S2"), data=data_i) + #ggtitle(sprintf("Gauged S=%.f\ , N=%.f, T=%.1f \n",S ,N, T))+
-  #scale_x_continuous(expand = c(0, 0), limits = c(-2 * bar_width, max(mu_list)*1.1), breaks=c(-0.05, 0.0, mu_list[mu_list>0])) + 
-  theme_bw()+geom_point(aes(x=M,y=S5, colour="S5"), size=3)+geom_errorbar(aes(x=M, ymin=error_min_S2, ymax=error_max_S2, colour="S2"),width=0.01)+
+
+myplot <- ggplot(aes(x=M, y=S2, colour="S2"), data=data_i) +  theme_bw()+geom_point(aes(x=M,y=S5, colour="S5"), size=3)+geom_errorbar(aes(x=M, ymin=error_min_S2, ymax=error_max_S2, colour="S2"),width=0.01)+
   geom_errorbar(aes(x=M, ymin=error_min_S5, ymax=error_max_S5, colour="S5"),width=0.01)+
   labs(colour='spheres') + geom_point(size=3, alpha=1.0)+
   theme(legend.position="bottom") + xlab(expression(mu))+ylab("radius")+theme(text = element_text(size=15))+ theme(axis.text=element_text(size=13))
@@ -230,12 +216,8 @@ plot_file <- p("observable_small_mu_sphere_radii_", UGB, file_pattern, ".pdf")
 
 suppressMessages(ggsave(myplot, file=plot_file))
 
-myplot <- ggplot(aes(x=M, y=comm2), data=data_i) + #ggtitle(sprintf("Gauged S=%.f\ , N=%.f, T=%.1f \n",S ,N, T))+
-  #scale_x_continuous(expand = c(0, 0), limits = c(-2 * bar_width, max(mu_list)*1.1), breaks=c(-0.05, 0.0, mu_list[mu_list>0])) + 
-  theme_bw()+#abs(colour="") + 
- # stat_function(fun=eq1, aes(colour= " 15/x+15/x^2"))+
- # stat_function(fun=eq2, aes(colour= "15/x^2"))+
-  geom_point(size=3, alpha=1.0)+ #scale_x_log10()+scale_y_log10()+
+myplot <- ggplot(aes(x=M, y=comm2), data=data_i) +
+  theme_bw()+
   geom_errorbar(aes(x=M, ymin=comm_error_min, ymax=comm_error_max),width=0.01, colour="blue")+
   theme(legend.position="bottom") + xlab(expression(mu))+ylab("F^2")+theme(text = element_text(size=15))+ theme(axis.text=element_text(size=13))
 
@@ -297,9 +279,6 @@ w_G <- 1/large_GN_data_er
 large_UN_data_er <- data.frame(M_1, comm_2_largeUN_er)
 large_UN_data_er <- unique(subset(large_UN_data_er, M_1>=2))
 
-#print(large_GN_data_er)
-#print(large_UN_data_er)
-
 together_large_N_data <- data.frame(large_GN_data,comm_2_largeGN_er, comm_2_largeUN, comm_2_largeUN_er)
 
 print(together_large_N_data)
@@ -310,22 +289,20 @@ y_min_U <- together_large_N_data$comm_2_largeUN-together_large_N_data$comm_2_lar
 y_max_U <- together_large_N_data$comm_2_largeUN+together_large_N_data$comm_2_largeUN_er
 
 print(y_min_G)
-#test <- function(x)3.5*x^(-1.4)
+
 myplot_2 <-ggplot(together_large_N_data, aes(x=M_1, y=comm_2_largeGN))+
 theme_bw()+geom_point(aes(x=M_1, y=comm_2_largeGN,shape="Gauged"), size=3)+
 geom_point(aes(x=M_1, y=comm_2_largeUN,shape="Ungauged"), size=3)+
   geom_errorbar(aes(x=M_1, width=0.01,  ymin=y_min_G, ymax=y_max_G, shape="Gauged"), color="blue")+
   geom_errorbar(aes(x=M_1, width=0.01,  ymin=y_min_U, ymax=y_max_U, shape ="Ungauged"),color="blue")+
   ylab(expression(F^2))+xlab(expression(mu))+scale_shape_discrete(name ="")+
- # stat_function(fun=test, color="red")+
-  theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))
-  #$geom_point(x=M_1, y=large_UN_data$large_UN_data.comm_2_largeUN, aes(shape="Ungauged"))
+ theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))
 
 plot_file_2 <- p("largeNS_comm2_for_T",T,".pdf")
-#print
+
 suppressMessages(ggsave(width = 25, height = 15, unit="cm", myplot_2, file=plot_file_2))
 
-log_reg <-lm(comm_2_largeGN ~ 1+M_1, data=large_GN_data)#, weight=w_G) 
+log_reg <-lm(comm_2_largeGN ~ 1+M_1, data=large_GN_data)
 
 summary(log_reg)
 sum <-summary(log_reg)
@@ -348,8 +325,7 @@ myplot_3 <-ggplot(together_large_N_data, aes(x=M_1, y=comm_2_largeGN), add="reg.
   
 
 plot_file_3 <- p("Log_Log_largeNS_comm2_for_T",T,".pdf")
-#print
+
 suppressMessages(ggsave(width = 25, height = 15, unit="cm", myplot_3, file=plot_file_3))
 
-#exit
 

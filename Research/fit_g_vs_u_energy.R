@@ -16,15 +16,8 @@ plot_labels <- c("energy", "s_trx2", "comm2")
 
 
 temperatures <- c("0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8","0.9","1.0", "1.1")
-#temperatures <- c("0.1", "0.16", "0.18", "0.2", "0.3", "0.4", "0.5", "0.6", "0.7", "0.8","0.9","1.0", "1.1")
 
-
-#fluxes <- c("1.0","2.0", "3.0", "4.0", "5.0")
-#fluxes <- c("1.0")
 fluxes <- c( "2.0", "3.0", "4.0", "5.0")
-
-
-#fluxes <- c("4.0", "5.0")
 
 
 # Import printf function 
@@ -101,9 +94,6 @@ colmin <- function(data) sapply(data, min, na.rm = TRUE)
 # Autocorrelation correction for errors:
 autoc_c=10.0
 
-#is.character(NA)
-#exit
-
 
 
 #take into account only the energies
@@ -120,7 +110,7 @@ for(plotloop in "energy"){
 	# Create plot dataframe
 	plotlabel=p("g_vs_u_Noo", "M = ", fluxloop)
 	
-       #distinct() to remove dublicate rows from readed data
+
 
 	database_mean_flux_g <- distinct(database_mean_g[database_mean_g$flux==as.numeric(as.character(fluxloop)), ])
 	database_sd_flux_g <- distinct(database_sd_g[database_sd_g$flux==as.numeric(as.character(fluxloop)), ])
@@ -150,7 +140,6 @@ for(plotloop in "energy"){
     database_sd_flux_u <- mutate_all(database_sd_flux_u, function(x) as.numeric(as.character(x)))
 
 
-#create database for C values 
 
 
 # Default fit from r package
@@ -167,8 +156,6 @@ sd <- sqrt((error_scale*database_sd_flux_g[,plotloop])^2+(error_scale*database_s
 #assign weights to data
 
 w <- 1/sd^2
-#w_rep <- rep(w, each <-4)
-
 
 y_min <- D_E - sd
 
@@ -183,9 +170,6 @@ data <- data.frame(T, D_E, sd,w)
 if(fluxloop == "1.0"){
 	data <- subset(data, T >= 0)
 
-#assign weights
-#w <- 1/sd^2
-#w_rep <- rep(w, each <-3)
 exp.mod <- nls(D_E ~ D*exp(-C * T), data, weights = w,  start = list(C =0.5 , D=5))
 
 sum <- summary(exp.mod)
@@ -199,10 +183,6 @@ D_Er <- signif(coef(sum)[2,"Std. Error"], digits = 4)
 
 
 eq <- paste("D_E=",D ,"(", D_Er,")","*exp(-1/T*",C ,"(", C_Er,"))",sep="")
-
-#print(C_Er)
-#print(D_Er)
-
 
 
 ggplot(data, aes(x=T,y=D_E), add="reg.line") + theme_bw()+
@@ -228,10 +208,7 @@ else if(fluxloop == "2.0"){
 	
 #weighted data
  data <- subset(data, T>0)
-#modelfit <- mexpfit(data$T, data$D_E, p0=c(0.1, 0.1), const=FALSE)
-#print(modelfit)
 
-#data <- subset(data, T>=2)
 exp.mod <- nls(D_E ~ D*exp(-C * T), data=subset(data, T>2 & T<10), weights = w,   start = list(C = 1.0, D=15))
 exp.mod_1 <- nls(D_E ~ C*(2+9*2/4)*exp(-C * T), data=subset(data, T>2),weights = w, start = list(C =1.0))
 exp.mod_2 <- nls(D_E ~  (C*n*exp(-C * T)), data=subset(data, T>0),weights = w, start = list(C=1, n=1))
@@ -258,8 +235,6 @@ n <- signif(coef(exp.mod_2)[2], digits = 4)
 C_2_Er <- signif(coef(sum_2)[1, "Std. Error"], digits=4)
 n_Er <- signif(coef(sum_2)[2,"Std. Error"], digits = 4)
 
-#C1 <-signif(coef(exp.mod_1)[1], digits = 4)
-
 C1 <-signif(coef(exp.mod_1)[1], digits = 4)
 C1_Er <- signif(coef(sum_1)[1, "Std. Error"], digits = 4)
 print(C1)
@@ -268,10 +243,7 @@ print(C1_Er)
 
 eq <- paste("D_E=",D ,"(", D_Er,")","*exp(-1/T*",C ,"(", C_Er,"))",sep="")
 eq_1<-function(x) ((6*2/2)*exp(-2/2*x)+8*3*2/4*exp(-(3*2/4)*x)+3*2*exp(-2*x))
-#eq_2 <-function(x)(2*exp(-(2/6)*x)+4*exp(-2/4*x)+2*exp(-2/3*x))
-#eq_1 <- function(x) ((6*2/6*+8*2/4+3*2/3)*exp(-2/6/x-2/4/x-2/3/x))
-#print(C_Er)
-#print(D_Er)
+
 
 ggplot(data, aes(x=T,y=D_E)) + theme_bw()+ #xlim(1.8,8)+
   geom_errorbar(data=subset(data, T>=2),aes(x=T, ymin=y_min, ymax=y_max), width=0.01, color ="blue")+
@@ -279,16 +251,9 @@ ggplot(data, aes(x=T,y=D_E)) + theme_bw()+ #xlim(1.8,8)+
   geom_point(mapping = NULL, data=subset(data, T>2))+
   labs(title= "N ="~infinity~", L ="~infinity~","~mu~"= 2", x="1/T", size=2.0)+
   ylab(expression(Delta~E/N^2))+geom_smooth(data=subset(data, T>2 & T<10),weights = w, method="nls", size = 1.2, formula = y~D*exp(-C*x),method.args = list(start = list(C=1, D=16)),se=F,aes(colour="two-parameter"))+
-  #geom_smooth(data=subset(data, T>2),weights = w, method="nls", size = 0.4, formula = y~C1*(2+9*2/4)*exp(-C1*x),method.args = list(start = list(C1=1)),se=F,aes(colour="one-parameter"))+
- # geom_smooth(data=subset(data, T>2),weights = w, method="nls", size = 0.4, formula = y~C*n*exp(-C*x),method.args = list(start = list(C=1, n=1)),se=F,aes(colour="C-n-parameter"))+
-  #geom_smooth(data=subset(data, T>2), weights = w, method="nls", size = 2.0, formula = y~(2*C*exp(-C*x) + 6*D*exp(-D*x)),method.args = list(start = list(C=0.2, D=0.5)),se=F,aes(colour="two-exponents"))+# annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.2, label = eq, color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
-  stat_function(fun=eq_1, aes(colour="perturbative U(1)"))+
- # stat_function(fun=eq_2, aes(colour="perturbative-lower"))+
-  #annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.2, label = eq, color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
-  #annotate("label", x = min(data$x), y = min(data$y),  vjust = 5.0, hjust = 2.2, label = p("RSE=",rse), color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
+ stat_function(fun=eq_1, aes(colour="perturbative U(1)"))+
    theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))+
   scale_color_manual(name="Fits", values=c("orange", "red"))+
- # scale_linetype_manual(name="Fits", values = c(3,1))+
   theme(legend.position = c(.95, .95),
     legend.justification = c("right", "top"),
     legend.box.just = "right",
@@ -302,11 +267,6 @@ fluxloop_energies <- p("E_T_mu2.csv")
 
 write.csv(format(data, digits=4), file = fluxloop_energies)
 
-#write.csv(format(data, digits=4), file = fluxloop_energies)
-
-#energies_error <- p("E_T_mu2_errors.csv")
-
-#write.csv(format(sd, digits=4), file = energies_error)
 
 
 } # end of if mu==2
@@ -354,12 +314,8 @@ C1_Er <- signif(coef(sum_1)[1, "Std. Error"] ,digits=4)
 
 
 eq <- paste("D_E=",D ,"(", D_Er,")","*exp(-1/T*",C ,"(", C_Er,"))",sep="")
-
-#eq_1 <- function(x) ((6*3/6*+8*3/4+3*3/3)*exp(-3/(6/x)-3/(4/x)-3/(3/x)))
 eq_1<-function(x)(6*(3/2)*exp(-3/2*x)+8*3*3/4*exp(-(3*3/4)*x)+3*3*exp(-3*x))
-#eq_2 <-function(x)(3*exp(-(3/6)*x)+6*exp(-3/4*x)+3*exp(-3/3*x))
-#print(C_Er)
-#print(D_Er)
+
 
 ggplot(data, aes(x=T,y=D_E)) + theme_bw()+
   geom_errorbar(aes(x=T, ymin=y_min, ymax=y_max), width=0.01, color ="blue")+
@@ -368,15 +324,8 @@ ggplot(data, aes(x=T,y=D_E)) + theme_bw()+
   labs(title="N ="~infinity~", L ="~infinity~","~mu~"= 3", x="1/T")+
   ylab(expression(Delta~E/N^2))+
   geom_smooth(data=subset(data, T>=0),weights = w, method="nls", size = 1.2, formula = y~D*exp(-C*x),method.args = list(start = list(C=1, D=16)),se=F,aes(colour="two-parameter"))+
- # geom_smooth(data=subset(data, T>=0),weights = w, method="nls", size = 0.4, formula = y~C1*(2+9*3/4)*exp(-C1*x),method.args = list(start = list(C1=1)),se=F,aes(colour="one-parameter"))+
-#  geom_smooth(data=subset(data, T>=0),weights = w, method="nls", size = 0.4, formula = y~C*n*exp(-C*x),method.args = list(start = list(C=1,n=1)),se=F,aes(colour="C-n-parameter"))+
-   # geom_smooth(data=subset(data, T>0), weights = w, method="nls", size = 2.0, formula = y~(2*C*exp(-C*x) + 6*D*exp(-D*x)),method.args = list(start = list(C=0.2, D=0.5)),se=F,aes(colour="two-exponents"))+# annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.2, label = eq, color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
-  stat_function(fun=eq_1, aes(colour="perturbative U(1)"))+
-  #stat_function(fun=eq_2, aes(colour="perturbative-lowest"))+
-  #geom_smooth(data=subset(data, T>0),weights = w, method="nls", size = 0.5, formula = y~(C*2*exp(-C*x)+D*6*exp(-D*x)),method.args = list(start = list(C=1, D=16)),se=F,color="orange",aes(linetype="one-parameter"))+
-  #annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.2, label = eq, color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
- # annotate("label", x = min(data$x), y = min(data$y),  vjust = 5.0, hjust = 2.2, label = p("RSE=",rse), color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
-   theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))+
+   stat_function(fun=eq_1, aes(colour="perturbative U(1)"))+
+    theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))+
   scale_color_manual(name="fits", values=c("orange", "red"))+
   theme(legend.position = c(.95, .95),
         legend.justification = c("right", "top"),
@@ -392,16 +341,12 @@ fluxloop_energies <- p("E_T_mu3.csv")
 
 write.csv(format(data, digits=4), file = fluxloop_energies)
 
-#energies_error <- p("E_T_mu3_errors.csv")
 
-#write.csv(format(sd, digits=4), file = energies_error)
 
 } #end of mu==3
 
 else if (fluxloop =="4.0"){
 	
-	#weighted data
-	#data <- subset(data, T > 1.25, w=D_E/sd^2)
 	data <- subset(data, T > 0)
 
 	print(data)
@@ -428,10 +373,6 @@ print(sum_1)
 print(sum_2)
 print(sum_3)
 
-#nonlin <- function(t,C,D) {2*C*exp(-C*t) + 6*D*exp(-D*t)}
-
-#exp.mod_2 <- nls(D_E ~ SSasymp(T, C, D), data = data)
-#exp.mod_1 <- nls(D_E ~2*C*exp(-C*T) + 6*D*exp(-D*T), data=data,  start = c(C=1, D=1.5))
 
 
 
@@ -451,10 +392,7 @@ C1_Er <- signif(coef(sum_1)[1, "Std. Error"] ,digits=4)
 eq <- paste("D_E=",D ,"(", D_Er,")","*exp(-1/T*",C ,"(", C_Er,"))",sep="")
 
 eq_1<-function(x)(6*(4/2)*exp(-(4/2*x))+8*3*4/4*exp(-(3*4/4)*x)+3*4*exp(-4*x))
-#eq_2 <-function(x)(4*exp(-(4/6)*x)+8*exp(-4/4*x)+4*exp(-4/3*x))
 
-#print(C_Er)
-#print(D_Er)
 
 ggplot(data, aes(x=T,y=D_E)) + theme_bw()+#xlim(1.5,3)+
   geom_errorbar(aes(x=T, ymin=y_min, ymax=y_max), width=0.01, color ="blue")+
@@ -462,17 +400,9 @@ ggplot(data, aes(x=T,y=D_E)) + theme_bw()+#xlim(1.5,3)+
   geom_point(mapping = NULL, data=subset(data, T>1.5))+
   labs(title="N ="~infinity~", L ="~infinity~","~mu~"= 4", x="1/T")+
   ylab(expression(Delta~E/N^2))+geom_smooth(data=subset(data, T > 1.25),weights = w, method="nls", size = 1.2,  formula = y~D*exp(-C*x),method.args = list(start = list(C=1, D=16)),se=F,aes(colour="two-parameter"))+
-  #geom_smooth(data=subset(data, T>1.5), weights = w, method="nls", size = 2.0, formula = y~(2*C*exp(-C*x) + 6*D*exp(-D*x)),method.args = list(start = list(C=0.7, D=1.2)),se=F,aes(colour="two-exponents"))+# annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.2, label = eq, color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
- # geom_smooth(data=subset(data, T > 1.25), weights = w,method="nls", size = 0.4, formula = y~C1*(2+9*4/4)*exp(-C1*x),method.args = list(start = list(C1=1)),se=F,aes(colour="one-parameter"))+
- # geom_smooth(data=subset(data, T > 1.25), weights = w,method="nls", size = 0.4, formula = y~C*n*exp(-C*x),method.args = list(start = list(C=1, n=1)),se=F,aes(colour="C-n-parameter"))+
-  stat_function(fun=eq_1, aes(colour="perturbative U(1)"))+
- # stat_function(fun=eq_2, aes(colour="perturbative_lower"))+
-  #stat_function(fun=eq_2, aes(colour="non-deg"))+
-  # annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.2, label = eq, color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
-  #annotate("label", x = min(data$x), y = min(data$y),  vjust = 5.0, hjust = 2.2, label = p("RSE=",rse), color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
-  theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))+
+   stat_function(fun=eq_1, aes(colour="perturbative U(1)"))+
+ theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))+
   scale_color_manual(name="Fits", values=c("orange", "red", "blue"))+
-  #scale_linetype_manual(name="Fits", values = c(3,1))+
   theme(legend.position = c(.95, .95),
         legend.justification = c("right", "top"),
         legend.box.just = "right",
@@ -487,9 +417,6 @@ fluxloop_energies <- p("E_T_mu4.csv")
 
 write.csv(format(data, digits=4), file = fluxloop_energies)
 
-#energies_error <- p("E_T_mu4_errors.csv")
-
-#write.csv(format(sd, digits=4), file = energies_error)
 
 }# end of mu==4
 
@@ -538,9 +465,6 @@ else
   eq <- paste("D_E=",D ,"(", D_Er,")","*exp(-1/T*",C ,"(", C_Er,"))",sep="")
   
   eq_1 <- function(x)((6*(5/2))*exp(-(5/2)*x)+8*3*5/4*exp(-(3*5/4)*x)+3*5*exp(-5*x))
- #eq_1 <- function(x) (2*exp(-(1)*x)+(6*5/2)*exp(-(5/2)*x))
- # print(C_Er)
-  #print(D_Er)
   
   ggplot(data, aes(x=T,y=D_E)) + theme_bw()+ #xlim(1.5,2.5)+
     geom_errorbar(aes(x=T, ymin=y_min, ymax=y_max), width=0.01, color ="blue")+
@@ -549,15 +473,8 @@ else
     labs(title="N ="~infinity~", L ="~infinity~","~mu~"= 5", x="1/T")+
     ylab(expression(Delta~E/N^2))+geom_smooth(data=subset(data, T>0), weights = w, method="nls", size = 1.2, formula = y~D*exp(-C*x),method.args = list(start = list(C=1.5, D=1.5)),se=F,aes(colour="two-parameter"))+
     stat_function(fun=eq_1, aes(colour="perturbative U(1)"))+
-    #stat_function(fun=eq_2, aes(colour="perturbative_lower"))+
-   # stat_function(fun=eq_2, aes(colour="lightest"))+
-   # geom_smooth(data=subset(data, T>0),weights = w, method="nls", size = 0.4,formula = y~C1*(2+9*5/4)*exp(-C1*x),method.args = list(start = list(C1=1)),se=F,aes(colour="one-parameter"))+
-  # geom_smooth(data=subset(data, T>0), weights = w, method="nls", size = 1, formula = y~(2*C*exp(-C*x) + 6*D*exp(-D*x)),method.args = list(start = list(C=1, D=1.5)),se=F,aes(colour="two-exponents"))+# annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.2, label = eq, color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
-   #geom_smooth(data=subset(data, T>0), weights = w, method="nls", size = 0.4, formula = y~(C*n*exp(-C*x)),method.args = list(start = list(C=1, n=1.5)),se=F,aes(colour="C-n-parameter"))+# annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.2, label = eq, color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
-    #annotate("label", x = min(data$x), y = min(data$y),  vjust = 5.0, hjust = 2.2, label = p("RSE=",rse), color="red", size = 4.0, parse=FALSE, fill = "#FFCC66")+
      theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))+
   scale_color_manual(name="Fits", values=c("blue","red", "blue"))+
- #   scale_linetype_manual(name=NULL, values = c(3,2,1))+
     theme(legend.position = c(.95, .95),
           legend.justification = c("right", "top"),
           legend.box.just = "right",
@@ -571,17 +488,11 @@ else
   
   write.csv(format(data, digits=4), file = fluxloop_energies)
   
- # energies_error <- p("E_T_mu5_errors.csv")
-  
- # write.csv(format(sd, digits=4), file = energies_error)
-  
+ 
 } # end ifs
 ggsave(plot_file)
 	
 
-
-#y_down <- results[fluxloop,2]-results[fluxloop,3]
-#y_up <- results[fluxloop,2]+results[fluxloop,3]
 
 
 } # end of plotloop
@@ -620,17 +531,14 @@ n_mu_file <-p("degeneracies",plotloop,"-mu.pdf")
 results<-na.omit(results)
 results[,C]<-na.omit(results[,C])
 
-#results[,C]<-na.omit(results[,C])
-
 flux<- as.numeric(fluxes)
-#flux <- c(2.0, 3.0, 4.0, 5.0)
 
 dataC_mu <- data.frame(flux, results[,2])
 dataC_mu_1 <- data.frame(flux, results[,6])
 dataC_mu_2 <- data.frame(flux, results[,8])
 data_n_mu <- data.frame(flux, results[,10])
 model <- lm(results[,2] ~I(flux^2), dataC_mu, weights = w1)
-#model <- y ~ Poly(x,3,raw = T)
+
 model_1 <-lm(results[,6] ~ I(flux^2), dataC_mu_1, weights = w2)
 model_3 <- lm(results[,8] ~ I(flux^2), dataC_mu_2,weights = w4)
 model_4 <- lm(results[,10] ~ I(flux)+I(flux^2), data_n_mu,weights = w5)
@@ -644,12 +552,10 @@ resc<-signif(mean(sum$sigma), digits = 4)
 
 a <- signif(coef(model)[1], digits = 4)
 b <- signif(coef(model)[2], digits = 4)
-#c <- signif(coef(model)[3], digits = 4)
-#d <- signif(coef(model3)[4], digits = 4)
+
 a_er <- signif(coef(sum)[1, "Std. Error"] ,digits=4)
 b_er <- signif(coef(sum)[2, "Std. Error"] ,digits=4)
-#c_er <- signif(coef(sum)[3, "Std. Error"] ,digits=4)
-eq <-paste("C_0=",a,"(",a_er,")+",b,"(",b_er,")", expression(mu^2))#,c,"(",c_er,")", expression(mu^2))
+eq <-paste("C_0=",a,"(",a_er,")+",b,"(",b_er,")", expression(mu^2))
 
 print(sum)
 
@@ -659,8 +565,6 @@ ggplot(dataC_mu, aes(x=flux,y=results[,2]),add="reg.line")+ theme_bw()+ xlim(0,5
   geom_errorbar(aes(x=0, ymin=0.83-0.21, ymax=0.83+0.21), width=0.01, color ="blue", hjust=1)+
   labs(title= "", x=expression(mu),y=expression(C[E]))+
   geom_smooth(method = "lm", size = 0.5, weights=w1, se = T, formula = poly1, colour = "red",fullrange = TRUE)+
- # annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.5, label = eq, color="red", size = 4.0, parse=F, fill = "#FFCC66")+
-#annotate("label", x = min(data$x)-0.5, y = min(data$y)-0.5, vjust = 5.0, hjust = 4, label =p("RSE=",resc), color="red", size = 4.0, parse=F, fill = "#FFCC66")+
   theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))
 
 
@@ -674,11 +578,8 @@ a_3 <- signif(coef(model_3)[1], digits = 4)
 b_3 <- signif(coef(model_3)[2], digits = 4)
 a_er_3 <- signif(coef(sum_3)[1, "Std. Error"] ,digits=4)
 b_er_3 <- signif(coef(sum_3)[2, "Std. Error"] ,digits=4)
-#c <- signif(coef(model)[3], digits = 4)
-#d <- signif(coef(model3)[4], digits = 4)
 a_er_1 <- signif(coef(sum_1)[1, "Std. Error"] ,digits=4)
 b_er_1 <- signif(coef(sum_1)[2, "Std. Error"] ,digits=4)
-#c_er <- signif(coef(sum)[3, "Std. Error"] ,digits=4)
 eq_1 <-paste("C_0=",a_1,"(",a_er_1,")+",b_1,"(",b_er_1,")", expression(mu^2))
 eq_C_2 <-paste("C_0=",a_3,"(",a_er_3,")+",b_3,"(",b_er_3,")", expression(mu^2))
 
@@ -689,7 +590,6 @@ ggplot(dataC_mu_1, aes(x=flux,y=results[,6]),add="reg.line")+ theme_bw()+ xlim(0
   labs(title= "Large N, Continuous", x=expression(mu),y=expression(C[E]))+
   geom_smooth(method = "lm", size = 0.5,weights=w3, se = T, formula = poly1, colour = "red",fullrange = TRUE)+
   annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.5, label = eq_1, color="red", size = 4.0, parse=F, fill = "#FFCC66")+
- # annotate("label", x = min(data$x)-0.5, y = min(data$y)-0.5, vjust = 5.0, hjust = 4, label =p("RSE=",resc), color="red", size = 4.0, parse=F, fill = "#FFCC66")+
   theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))
 ggsave(C_mu_1_file)
 
@@ -705,8 +605,6 @@ ggplot(dataC_mu_2, aes(x=flux,y=results[,8]),add="reg.line")+ theme_bw()+ xlim(0
   theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))
 ggsave(C_mu_2_file)
 
-#+geom_smooth(formula = y~ 1+x, method="lm",color  ='red',se=F)
-
 dataD <- data.frame(flux, results[,4])
 modelD <- lm(results[,4] ~ I(flux^2), dataD, weights=w2)
 sum <- summary(modelD)
@@ -715,11 +613,9 @@ resd<-signif(mean(sum$sigma), digits = 4)
 
 a_d <- signif(coef(modelD)[1], digits = 4)
 b_d <- signif(coef(modelD)[2], digits = 4)
-#c <- signif(coef(model)[3], digits = 4)
-#d <- signif(coef(model3)[4], digits = 4)
+
 a_d_er <- signif(coef(sum)[1, "Std. Error"] ,digits=4)
 b_d_er <- signif(coef(sum)[2, "Std. Error"] ,digits=4)
-#c_er <- signif(coef(sum)[3, "Std. Error"] ,digits=4)
 eqd <-paste("D_0=",a_d,"(",a_d_er,")+",b_d,"(",b_d_er,")", expression(mu^2))
 
 
@@ -730,21 +626,15 @@ ggplot(dataD, aes(x=flux,y=results[,4]),add="reg.line")+ theme_bw()+
   geom_errorbar(aes(x=0, ymin=1.59-0.51, ymax=1.59+0.51), width=0.01, color ="blue", hjust=1)+
   labs(title="", x=expression(mu),y=expression(D[E]))+
   geom_smooth(method = "lm", size =0.5, weights=w2, se = T, formula = poly1, colour = "red",fullrange = TRUE)+
- # annotate("label", x = min(data$x), y = min(data$y), vjust = 3.0, hjust = 1.5, label =eqd, color="red", size = 4.0, parse=F, fill = "#FFCC66")+
- # annotate("label", x = min(data$x)-0.5, y = min(data$y)-0.5, vjust = 5.0, hjust = 4, label =p("RSE=",resd), color="red", size = 4.0, parse=F, fill = "#FFCC66")+
-  theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))
+   theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))
 
 ggsave(D_mu_file)
 
 
 a_n <- signif(coef(model_4)[1], digits = 4)
 b_n <- signif(coef(model_4)[2], digits = 4)
-#c_n <- signif(coef(model_4)[3], digits = 4)
-#c <- signif(coef(model)[3], digits = 4)
-#d <- signif(coef(model3)[4], digits = 4)
 a_n_er <- signif(coef(sum_4)[1, "Std. Error"] ,digits=4)
 b_n_er <- signif(coef(sum_4)[2, "Std. Error"] ,digits=4)
-#c_n_er <- signif(coef(sum_4)[3, "Std. Error"] ,digits=4)
 print(sum_4)
 
 eq_n <-paste("n_0=",a_n,"(",a_n_er,")+",b_n,"(",b_n_er,")", expression(mu))

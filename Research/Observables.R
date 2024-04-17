@@ -10,19 +10,12 @@ p <- function(..., sep='') {
 energies <- read.csv("/Users/stratos/Documents/projects/programm/mod/C_E.csv", header = TRUE, sep = ",")
 strx2 <- read.csv("/Users/stratos/Documents/projects/programm/mod/C_strx2.csv",header = TRUE, sep = ",")
 comm2 <- read.csv("/Users/stratos/Documents/projects/programm/mod/C_comm2.csv",header = TRUE, sep = ",")
-#print(energies)
-#print(strx2)
-#print(comm2)
-
-#observables <- c("C_Energy", "C_energy_er", "C_Strx2", "C_Strx2_er", "C_Comm2", "C_Comm2_er")
-
-#observables <- 0
 
 energies[5,] <- NA
 energies <- na.omit(energies)
 
 mu <- c(energies[,"mu"])
-#print(mu)
+
 slope_E <- c(energies[,"Energy_Slope"])
 slope_S <- c(strx2[,"strx2_Slope"])
 slope_C <- c(comm2[,"comm2_Slope"])
@@ -53,9 +46,6 @@ y_max_DS <- D_S+D_S_error
 y_min_DC <- D_C-D_C_error
 y_max_DC <- D_C+D_C_error
 
-#data_all <- data.frame(slope_E,slope_E_error, D_E, D_C_error, slope_S, slope_S_error, D_S, D_S_error, slope_C, slope_C_error, D_C, D_C_error)
-
-#print(data_all)
 slope_file <- p("slope_observables.pdf")
 
 data1 <- data.frame(observables=c(rep("E",4),rep("R",4), rep("F",4)),x=mu, y=c(slope_E,slope_S,slope_C))
@@ -65,7 +55,6 @@ ggplot(data1, aes(x=x, y=y, colour=observables))+geom_point(aes(shape=observable
   geom_errorbar(aes(x=x,width= 0.1,  ymin=c(y_min_E, y_min_S,y_min_C), ymax=c(y_max_E, y_max_S,y_max_C)))+
   xlab(expression(mu))+
   ylab(expression("C"))+ 
- # ggtitle("Large N and continuous")+
   theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))
 
 ggsave(width = 20, height = 15, unit="cm",slope_file)
@@ -79,7 +68,6 @@ ggplot(data2, aes(x=x, y=y, colour=observables))+geom_point(aes(shape=observable
   geom_errorbar(aes(x=x, width= 0.1,  ymin=c(y_min_DE, y_min_DS,y_min_DC), ymax=c(y_max_DE, y_max_DS,y_max_DC)))+
   xlab(expression(mu))+
   ylab("D")+ 
- # ggtitle("Large N and continuous") +
   theme(text = element_text(size=16))+ theme(axis.text=element_text(size=16))
 
 ggsave(width = 20, height = 15, unit="cm", D_file)
