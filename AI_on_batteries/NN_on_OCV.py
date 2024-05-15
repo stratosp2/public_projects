@@ -13,11 +13,6 @@ from sklearn.metrics import r2_score
 import glob
 import random
 
-
-#data = pd.read_csv("./OCV_data/Mohtat2020_99_.csv")
-#data.columns
-
-
 #model = 'Ai'
 global_file_list= glob.glob("./OCV_data/*.csv") 
 len(global_file_list)
@@ -32,13 +27,12 @@ print("Model is:", model)
 #create a list of available csv files
 folder_path = './OCV_data/'+model
 file_list = glob.glob(folder_path + "*.csv") 
-#file_list
 files = random.sample(file_list, 10)
 len(file_list) 
 
 
 
-#This is needed for training the model
+#This is needed for initial training of the model
 df_list = []
 for i in range(0,len(files)):
     full_data = pd.read_csv(files[i])
@@ -46,7 +40,6 @@ for i in range(0,len(files)):
     df_list.append(full_data)
 
 main_dataframe = pd.concat(df_list,axis=0)    
-#main_dataframe.info()
 
 data = main_dataframe
 
@@ -70,7 +63,6 @@ train_labels
 
 normalizer = tf.keras.layers.Normalization(axis=-1)
 normalizer.adapt(np.array(train_features))
-#print(normalizer.mean.numpy())
 
 OCV = np.array(train_features)
 
@@ -121,14 +113,11 @@ plt.show()
 print('Calling NN model for :', model)
 new_model = tf.keras.models.load_model('./NN_'+model+' _OCV_model')
 
-#print(test_features)
+
 test_2_predictions = new_model.predict(test_2_dataset).flatten()
-#print(test_2_predictions)
-#test_new_predictions = OCV_model.predict(test_2_dataset).flatten()
-#print(test_new_predictions)
+
 score = round(r2_score(test_2_labels, test_2_predictions),4)*100 
 score = f'{score:0.2f}%'
-score
 print(score)
 a = plt.axes(aspect='equal')
 plt.scatter(test_2_labels, test_2_predictions)
