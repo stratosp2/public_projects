@@ -1,0 +1,162 @@
+library(quantmod)
+library(PerformanceAnalytics)
+library(PortfolioAnalytics)
+library(DEoptim)
+library(reshape)
+library(ggplot2)
+library(tidyverse)
+library(ROI)
+
+
+Ticks <- c("VWCE.DE", "VUAA.DE",  "XMME.DE",  "ZPRX.DE")
+
+since = "2020-02-01"
+
+SPY <- ROC(Ad(to.monthly(getSymbols("^GSPC", auto.assign = F, from = since))), type = "discrete" )
+SPY[is.na(SPY)] <- 0
+colnames(SPY) <- "SPY"
+
+#create a new environement
+e <- new.env()
+getSymbols(Ticks, env = e, from = since)
+
+
+#create  monthly series
+monthly <- eapply(e, function(x)to.monthly(x, name = names(x)))
+port <- do.call(merge, lapply(monthly, Ad))
+colnames(port) <- gsub(".Adjusted", "", names(port))
+port <- ROC(port, type = "discrete")
+port[is.na(port)] <- 0
+
+etfs <- port
+
+#cheeck correlations of etfs portfolio
+pairs.panels(etfs%>%data.frame())
+charts.PerformanceSummary(etfs, main = "ETF cumulative performance")
+
+#import fama-french factors
+fama_french_factors <- read.csv("F-F_Research_Data_5_Factors_2x3.csv",  header = T)
+colnames(fama_french_factors) <- c("Date", "Mkt-RF", "SMB", "HML", "RMW", "CMA", "RF")
+
+
+fama_french_factors%>% mutate(Date = as.yearmon(as.character(fama_french_factors$Date), "%Y%m"))%>%
+  mutate(`Mkt-RF`=`Mkt-RF`/100,   SMB=SMB/100,  HML=HML/100, RMW=RMW/100, CMA=CMA/100, RF=RF/100)-> fama_french_factors
+
+
+#create dataframe of etfs
+df_full_etfs <- etfs%>%fortify.zoo %>%data.frame()
+colnames(df_full_etfs) <- c("Date",colnames(etfs))
+
+#merge etfs with fama french factors to run regressions
+#joined_data <- merge(x=df_full_etfs, y=fama_french_factors, on = 'Date', all.x= F)
+all_etfs_joined <- merge(x=df_full_etfs, y=fama_french_factors, on = 'Date', all.x= F)#%>%merge(joined_data, on = "Date")
+all_etfs_joined
+
+
+n=ncol(port)
+
+#make a loop that fits each Etf with ff5factor and store the factors and std in lists  
+coeff <- c()
+std <- c()
+for (i in 1:n){
+  sum <- summary(lm(all_etfs_joined[,colnames(port)[i]]-RF ~ `Mkt-RF` + SMB + HML+ RMW + CMA  , data = all_etfs_joined))
+  coeff[[i]] <- c(sum$coefficients[,1])
+  std[[i]] <- c(sum$coefficients[,2])
+}
+
+#extract coefficients and stds and create df to be plotted later.
+coeff_list <- lapply(1:length(coeff), function(x) as.numeric(coeff[[x]]))
+std_list <-  lapply(1:length(std), function(x) as.numeric(std[[x]]))
+
+coef_df <- sapply(coeff, as.numeric)%>%data.frame()
+colnames(coef_df) <- colnames(port)
+coef_df$Coefficients <-c("Intercept","Mkt-RF", "SMB","HML","RMW","CMA")
+
+std_df <- sapply(std, as.numeric)%>%data.frame()
+colnames(std_df) <- colnames(port)
+std_df$Coefficients <-c("Intercept","Mkt-RF", "SMB","HML","RMW","CMA")
+
+
+
+#transpose the dataframe except for the first row (intercept alpha) and last column (n+1)
+coef_df_t <- coef_df[-1,-(n+1)]%>%t()
+colnames(coef_df_t) <- coef_df[-1,]$Coefficients
+coef_df_t
+coef_matrix <- coef_df_t[,-c(4,5)]%>%as.matrix()#%>%unname()
+
+#the betas we are after to fit
+betas = coef_matrix
+betas
+lower <- c(0.55, 0.2, 0.1)
+upper <- c(0.7, 0.4, 0.3)
+
+#' Create portfolio object
+pspec <- portfolio.spec(assets=Ticks)
+
+#' Here we define individual constraint objects.
+#' Leverage constraint. sum of weights is one
+lev_constr <- weight_sum_constraint(min_sum=1, max_sum=1)
+
+#' Box constraint, min and max weights
+lo_constr <- box_constraint(assets=pspec$assets, min=c(0.01, 0.02, 0.03, 0.04), max=0.65)
+
+# Fama-French factor exposure constraint
+exp_constr <- factor_exposure_constraint(assets=Ticks, B=betas, lower=lower, upper=upper)
+
+#' Here we define objectives.
+#' 
+#' Objective to minimize variance.
+var_obj <- portfolio_risk_objective(name="var")
+
+#' Objective to maximize return.
+ret_obj <- return_objective(name="mean")
+
+#' Objective to minimize ETL.
+etl_obj <- portfolio_risk_objective(name="ETL")
+
+optb <- optimize.portfolio(R=etfs, portfolio=pspec, 
+                           constraints=list(lev_constr,lo_constr, exp_constr), 
+                           objectives=list(var_obj, ret_obj), #this we can decide to include or not.
+                           optimize_method="ROI")
+
+
+#manually add weights
+etf_weights <- c(0.4, 0.3, 0.15, 0.15)
+#optimal weights from optb
+opt_weights <- optb$weights
+print(opt_weights)
+
+#create the portfolio returns based on optimal weights  
+etf_port <- reclass(coredata(etfs)%*%opt_weights, match.to = etfs)
+colnames(etf_port) <- "opt_returns"
+
+df_etf <- etf_port%>%fortify.zoo %>%data.frame()
+colnames(df_etf) <- c("Date","opt_returns")
+
+#create the portfolio returns based on manual weights
+etf_port_pre <- reclass(coredata(etfs)%*%etf_weights, match.to = etfs)
+colnames(etf_port_pre) <- "man_returns"
+
+#manually weighted df returns
+df_etf_stand <- etf_port_pre%>%fortify.zoo %>%data.frame()
+colnames(df_etf_stand) <- c("Date","man_returns")
+
+# merging all returns (optimized, manual) and etfs with fama frenc factors for portfolio regression
+port_ret_factors <- merge(x=all_etfs_joined, y=c(df_etf, df_etf_stand), on = 'Date', all.x= F)
+port_ret_factors
+
+# check some performance metrics
+charts.PerformanceSummary(merge(etf_port,etf_port_pre, SPY))
+charts.RollingPerformance(merge(etf_port,etf_port_pre, SPY),  legend.loc = "topleft")
+charts.RollingPerformance(etf_port-SPY,  legend.loc = "topleft")
+
+#Check contitional value at risk
+CVaR(etfs)
+CVaR(etf_port)
+CVaR(etf_port_pre)
+CVaR(SPY)
+
+# run a regression for the 3 factors on either the optimized weights returns or manual weights returns 
+five_factor_model <- lm(man_returns-RF ~ `Mkt-RF` + SMB + HML, data = port_ret_factors)
+summary(five_factor_model)
+
