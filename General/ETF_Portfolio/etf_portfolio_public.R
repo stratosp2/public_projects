@@ -156,3 +156,73 @@ CVaR(SPY)
 five_factor_model <- lm(man_returns-RF ~ `Mkt-RF` + SMB + HML, data = port_ret_factors)
 summary(five_factor_model)
 
+
+##
+## Calculate investments
+##
+df_inv <- etf_port_pre%>%fortify.zoo %>%data.frame()
+colnames(df_inv) <- c("Date","returns")
+df_inv
+total_invest = 10000
+
+add = round(total_invest/length(df_inv$Date),0)
+
+add
+
+start = add
+
+df_inv$cum_returns <- cumsum(df_inv$returns)
+df_inv$investments <- start
+df_inv$exp_returns<- start
+
+for (i in 1:length(df_inv$Date-1)) {
+  df_inv[i+1, "investments"] <-  df_inv[i, "investments"]+add
+  df_inv[i+1, "exp_returns"] <-  (df_inv[i, "exp_returns"]+add)*(1+df_inv[i+1,"returns"])
+}
+
+df_inv <- df_inv%>%drop_na()
+
+df_inv$lump_sum <- total_invest*(1+df_inv$cum_returns)
+
+length(df_inv$Date)
+df_inv$market_lump_sum <- total_invest*(1+cumsum(SPY$SPY))
+
+avg_gain <- round(tail(df_inv$exp_returns)[6]-total_invest, 3)
+ls_gain <- round(tail(df_inv$lump_sum)[6]-total_invest,3)
+mkt_ls_gain <- round(tail(df_inv$market_lump_sum)[6]-total_invest,3)
+
+investment_years <- time_length(difftime(df_inv$Date[1],df_inv$Date[length(df_inv$Date)]), "years")%>%abs()
+
+months <- round((investment_years-round(investment_years,0))*12,2)
+
+time_length(difftime(df_inv$Date[1],df_inv$Date[length(df_inv$Date)]), "months")%>%abs()
+
+########
+########
+# Calculate returns by year and find geometric average for investement years
+########
+########
+annual_etf_port <- data.frame(dates = df_inv$Date, monthly_returns = df_inv$returns)%>%group_by(year(dates)) %>%
+  summarize(annual_return = prod(1 + monthly_returns) - 1)
+
+annual_etf_port
+prod(1+annual_etf_port$annual_return)
+
+end_value = 100*prod(1+annual_etf_port$annual_return)
+
+# writing the function
+f1 = function(x) {
+  100*(x^abs(investment_years)) - end_value
+}
+roots = uniroot.all(f1, c(0, 3))
+
+annualised_return = round(100*(roots-1),2)
+
+ggplot()+ geom_line(data = df_inv, aes(x=Date, y = exp_returns, color =paste0("Average dollar: ", avg_gain)))+
+  geom_line(data = df_inv, aes(x=Date, y = lump_sum, color = paste0("Lump sum: ", ls_gain)))+theme_bw()+
+  # geom_line(data = df_etf, aes(x=Date, y = market_lump_sum, color = paste0("SPY Lump sum: ", mkt_ls_gain)))+
+  # geom_line(data = df_etf, aes(x=Date, y = investments, color = paste0("investment AVD")), linetype="dashed")+
+  labs(x= "Date", y = "Money return", color = "Strategies and gains:") + 
+  ggtitle(paste0("Lump sum vs average dollar strategies: ", round(investment_years,0), " years, and ", months, " months. Total invest ", total_invest, ", anualised return ", annualised_return,"%"))+
+  theme(legend.position = "top")
+
