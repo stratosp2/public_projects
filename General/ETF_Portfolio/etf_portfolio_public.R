@@ -48,7 +48,6 @@ df_full_etfs <- etfs%>%fortify.zoo %>%data.frame()
 colnames(df_full_etfs) <- c("Date",colnames(etfs))
 
 #merge etfs with fama french factors to run regressions
-#joined_data <- merge(x=df_full_etfs, y=fama_french_factors, on = 'Date', all.x= F)
 all_etfs_joined <- merge(x=df_full_etfs, y=fama_french_factors, on = 'Date', all.x= F)#%>%merge(joined_data, on = "Date")
 all_etfs_joined
 
@@ -93,8 +92,7 @@ upper <- c(0.7, 0.4, 0.3)
 #' Create portfolio object
 pspec <- portfolio.spec(assets=Ticks)
 
-#' Here we define individual constraint objects.
-#' Leverage constraint. sum of weights is one
+#' Leverage constraint. Sum of weights is one
 lev_constr <- weight_sum_constraint(min_sum=1, max_sum=1)
 
 #' Box constraint, min and max weights
@@ -103,8 +101,6 @@ lo_constr <- box_constraint(assets=pspec$assets, min=c(0.01, 0.02, 0.03, 0.04), 
 # Fama-French factor exposure constraint
 exp_constr <- factor_exposure_constraint(assets=Ticks, B=betas, lower=lower, upper=upper)
 
-#' Here we define objectives.
-#' 
 #' Objective to minimize variance.
 var_obj <- portfolio_risk_objective(name="var")
 
