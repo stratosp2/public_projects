@@ -6,6 +6,8 @@ library(reshape)
 library(ggplot2)
 library(tidyverse)
 library(ROI)
+library(psych)
+library(rootSolve)
 
 
 Ticks <- c("VWCE.DE", "VUAA.DE",  "XMME.DE",  "ZPRX.DE")
