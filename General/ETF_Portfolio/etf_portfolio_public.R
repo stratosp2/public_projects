@@ -131,7 +131,6 @@ optb <- optimize.portfolio(R=etfs, portfolio=pspec,
                            objectives=list(var_obj, ret_obj), #this we can decide to include or not.
                            optimize_method="ROI")
 
-
 #manually add weights
 etf_weights <- c(0.4, 0.3, 0.15, 0.15)
 #optimal weights from optb
@@ -155,7 +154,6 @@ colnames(df_etf_stand) <- c("Date","man_returns")
 
 # merging all returns (optimized, manual) and etfs with fama frenc factors for portfolio regression
 port_ret_factors <- merge(x=all_etfs_joined, y=c(df_etf, df_etf_stand), on = 'Date', all.x= F)
-port_ret_factors
 
 # check some performance metrics
 charts.PerformanceSummary(merge(etf_port,etf_port_pre, SPY))
@@ -178,12 +176,10 @@ summary(five_factor_model)
 ##
 df_inv <- etf_port_pre%>%fortify.zoo %>%data.frame()
 colnames(df_inv) <- c("Date","returns")
-df_inv
 total_invest = 10000
 
+#add every mobth on portfolio
 add = round(total_invest/length(df_inv$Date),0)
-
-add
 
 start = add
 
@@ -221,7 +217,11 @@ time_length(difftime(df_inv$Date[1],df_inv$Date[length(df_inv$Date)]), "months")
 annual_etf_port <- data.frame(dates = df_inv$Date, monthly_returns = df_inv$returns)%>%group_by(year(dates)) %>%
   summarize(annual_return = prod(1 + monthly_returns) - 1)
 
-annual_etf_port
+colnames(annual_etf_port) <- c("Year", "Returns")
+
+ggplot(annual_etf_port, aes(Year, Returns, fill = Returns))+geom_col()+
+  scale_fill_gradient(low="red", high="green") +ggtitle("Yearly returns of our portfolio")
+
 prod(1+annual_etf_port$annual_return)
 
 end_value = 100*prod(1+annual_etf_port$annual_return)
