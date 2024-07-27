@@ -36,13 +36,28 @@ etfs <- port
 pairs.panels(etfs%>%data.frame())
 charts.PerformanceSummary(etfs, main = "ETF cumulative performance")
 
-#import fama-french factors
-fama_french_factors <- read.csv("F-F_Research_Data_5_Factors_2x3.csv",  header = T)
-colnames(fama_french_factors) <- c("Date", "Mkt-RF", "SMB", "HML", "RMW", "CMA", "RF")
+#function to get ff_data
+get_ff_data <- function(){
+  
+  temp <- tempfile()
+  base <- "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/"
+  name <- "F-F_Research_Data_5_Factors_2x3_CSV.zip"
+  full_url <-  glue(base,name)
+  download.file(full_url,temp,quiet = TRUE)
+  five_Factors <- read_csv(unz(temp, "F-F_Research_Data_5_Factors_2x3.csv"), skip = 2)%>%rename(Date = `...1`) %>% 
+    mutate_at(vars(-Date), as.numeric)%>%suppressWarnings()
+  
+  write.csv(five_Factors, file = "F-F_Research_Data_5_Factors_2x3.csv")
+  
+  return(five_Factors)
+}
 
+five_Factors <- get_ff_data()
 
-fama_french_factors%>% mutate(Date = as.yearmon(as.character(fama_french_factors$Date), "%Y%m"))%>%
+five_Factors%>% mutate(Date = as.yearmon(as.character(five_Factors$Date), "%Y%m"))%>%
   mutate(`Mkt-RF`=`Mkt-RF`/100,   SMB=SMB/100,  HML=HML/100, RMW=RMW/100, CMA=CMA/100, RF=RF/100)-> fama_french_factors
+
+fama_french_factors%>%drop_na()%>%tail(5)
 
 
 #create dataframe of etfs
