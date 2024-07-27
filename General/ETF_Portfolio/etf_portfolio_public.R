@@ -222,9 +222,9 @@ colnames(annual_etf_port) <- c("Year", "Returns")
 ggplot(annual_etf_port, aes(Year, Returns, fill = Returns))+geom_col()+
   scale_fill_gradient(low="red", high="green") +ggtitle("Yearly returns of our portfolio")
 
-prod(1+annual_etf_port$annual_return)
+prod(1+annual_etf_port$Returns)
 
-end_value = 100*prod(1+annual_etf_port$annual_return)
+end_value = 100*prod(1+annual_etf_port$Returns)
 
 # writing the function
 f1 = function(x) {
