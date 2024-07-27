@@ -40,15 +40,14 @@ charts.PerformanceSummary(etfs, main = "ETF cumulative performance")
 get_ff_data <- function(){
   
   temp <- tempfile()
-  base <- "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/"
   name <- "F-F_Research_Data_5_Factors_2x3_CSV.zip"
-  full_url <-  glue(base,name)
+  full_url <-  paste0("https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/ftp/",name)
   download.file(full_url,temp,quiet = TRUE)
   five_Factors <- read_csv(unz(temp, "F-F_Research_Data_5_Factors_2x3.csv"), skip = 2)%>%rename(Date = `...1`) %>% 
     mutate_at(vars(-Date), as.numeric)%>%suppressWarnings()
   
   write.csv(five_Factors, file = "F-F_Research_Data_5_Factors_2x3.csv")
-  
+  file.remove(temp)
   return(five_Factors)
 }
 
