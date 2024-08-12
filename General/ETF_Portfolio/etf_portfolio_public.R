@@ -8,6 +8,7 @@ library(tidyverse)
 library(ROI)
 library(psych)
 library(rootSolve)
+library(data.table)
 
 
 Ticks <- c("VWCE.DE", "VUAA.DE",  "XMME.DE",  "ZPRX.DE")
@@ -46,7 +47,7 @@ get_ff_data <- function(){
   five_Factors <- read_csv(unz(temp, "F-F_Research_Data_5_Factors_2x3.csv"), skip = 2)%>%rename(Date = `...1`) %>% 
     mutate_at(vars(-Date), as.numeric)%>%suppressWarnings()
   
-  write.csv(five_Factors, file = "F-F_Research_Data_5_Factors_2x3.csv")
+  write.csv(five_Factors, file = "F-F_Research_Data_5_Factors_2x3.csv", row.names = F)
   file.remove(temp)
   return(five_Factors)
 }
@@ -109,16 +110,19 @@ upper <- c(0.7, 0.4, 0.3)
 pspec <- portfolio.spec(assets=Ticks)
 
 #' Leverage constraint. Sum of weights is one
-lev_constr <- weight_sum_constraint(min_sum=1, max_sum=1)
+lev_constr <- weight_sum_constraint(min_sum=0.99, max_sum=1.01)
 
 #' Box constraint, min and max weights
-lo_constr <- box_constraint(assets=pspec$assets, min=c(0.01, 0.02, 0.03, 0.04), max=0.65)
+lo_constr <- box_constraint(assets=pspec$assets, min=c(0.05, 0.05, 0.05, 0.05), max=0.65)
 
 # Fama-French factor exposure constraint
 exp_constr <- factor_exposure_constraint(assets=Ticks, B=betas, lower=lower, upper=upper)
 
 #' Objective to minimize variance.
 var_obj <- portfolio_risk_objective(name="var")
+
+# Number of assets
+pl_constr <- position_limit_constraint(assets=pspec$assets, min_pos=4)
 
 #' Objective to maximize return.
 ret_obj <- return_objective(name="mean")
@@ -127,10 +131,9 @@ ret_obj <- return_objective(name="mean")
 etl_obj <- portfolio_risk_objective(name="ETL")
 
 optb <- optimize.portfolio(R=etfs, portfolio=pspec, 
-                           constraints=list(lev_constr,lo_constr, exp_constr), 
-                           objectives=list(var_obj, ret_obj), #this we can decide to include or not.
-                           optimize_method="ROI")
-
+                           constraints=list(lev_constr,lo_constr, exp_constr,pl_constr), 
+                           objectives=list(ret_obj),  maxSTARR=TRUE,#this we can decide to include or not.
+                           optimize_method="DEoptim", search_size = 30000, maxiter=10000)
 #manually add weights
 etf_weights <- c(0.4, 0.3, 0.15, 0.15)
 #optimal weights from optb
@@ -156,9 +159,9 @@ colnames(df_etf_stand) <- c("Date","man_returns")
 port_ret_factors <- merge(x=all_etfs_joined, y=c(df_etf, df_etf_stand), on = 'Date', all.x= F)
 
 # check some performance metrics
-charts.PerformanceSummary(merge(etf_port,etf_port_pre, SPY))
-charts.RollingPerformance(merge(etf_port,etf_port_pre, SPY),  legend.loc = "topleft")
-charts.RollingPerformance(etf_port-SPY,  legend.loc = "topleft")
+charts.PerformanceSummary(merge(etf_port_pre, SPY))
+charts.RollingPerformance(merge(etf_port_pre, SPY),  legend.loc = "topleft")
+charts.RollingPerformance(etf_port_pre-SPY,  legend.loc = "topleft")
 
 #Check contitional value at risk
 CVaR(etfs)
@@ -169,6 +172,73 @@ CVaR(SPY)
 # run a regression for the 3 factors on either the optimized weights returns or manual weights returns 
 five_factor_model <- lm(man_returns-RF ~ `Mkt-RF` + SMB + HML, data = port_ret_factors)
 summary(five_factor_model)
+
+
+###################### Monte Carlo for portfolio #################################
+
+#mean and stantard deviation of returns
+mn <- mean(etf_port_pre)
+std <- sd(etf_port_pre) 
+
+
+#create a normal distribution from these 
+nd <- rnorm(10000, mn, std)
+hist(nd, breaks = 300, 
+     main = paste0("Histogram of portfolio returns, mean: ", round(mn, 4)*100,"%"),
+     xlab = "Monthly Returns",
+     col = "magenta"
+)
+
+#generate future expectations
+set.seed(0)
+nmonths <- 36
+returns <- as.numeric(etf_port_pre$man_returns)
+#sample to be Montme carlo. mean(paths) -> mean(returns) as n>>1. See documentation ?sample()
+paths <- replicate(n=5000, 
+                   expr = sample(returns, nmonths, replace = T)) # (.,x,.) x is the size of the sample and future
+# apply commulative sum in columns -> (.,2,.)
+paths <- apply(paths, 2, cumsum)
+#prepare
+paths <- data.table(paths)
+paths$months <- 1:nrow(paths)
+paths <- melt(paths, id.vars = "months")
+
+MC_mean <- round(mean(paths$value),3)
+MC_sd <- round(sd(paths$value),3)
+
+p_nq <- round(pnorm(q = 0, mean = MC_mean, sd = MC_sd),4)
+
+# Mean of negative cumulative prod's?
+mn_nq <- mean(paths$value[paths$months == nmonths]<0)
+mn_nq
+
+mean_end <- round(mean(paths$value[paths$months== nmonths]),4)
+
+ggplot(paths, aes(x = months, y = value, col = variable)) + geom_line() + 
+  theme_bw() + theme(legend.position = "none") +
+  labs(x = "Months", y = "Cummulative returns", 
+       title = paste("Monte Carlo for future returns, mean end:", mean_end*100,"%",
+                     ". P for negative cummulative returns:",p_nq*100,
+                     "%, average negative returns:-", mn_nq*100, "%"))
+
+#mean of cum prods more than 30%
+mn_03 <- mean(paths$value[paths$months == nmonths]>=0.3)
+mn_03
+
+hist(paths$value[paths$months== nmonths], breaks = 200, 
+    main = paste("Histogram of cummulative returns after", nmonths, "months of portfolio. Mean:", mean_end*100,"%"),
+     xlab = "Cummulative return", 
+     col = "magenta")
+
+#probability to be more than q. Note the lower.tail=F argument.
+p_ps <- round(pnorm(q = 0.3, mean = MC_mean, sd = MC_sd, lower.tail = FALSE),4)
+p_ps
+
+############################# End of Monte Carlo ####################################
+
+
+
+
 
 
 ##
