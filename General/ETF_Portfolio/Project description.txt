@@ -1,6 +1,6 @@
 We deploy an algorithm to create an ETF portfolio with exposure 
 to Fama-French factors: Mkt-RF, SMB and HML with statistical significance.
 We compare our portfolio with the S&P 500 index and we check performance 
-since February 2020. The reason we do not go more back in the past is 
-because for some of the ETfs, e.g VUAA we have data since Feb 2020 
+since February 2015. The reason we do not go more back in the past is 
+because for some of the ETfs, e.g ZPRX we have data since Feb 2015 
 from yahoo finance.  
