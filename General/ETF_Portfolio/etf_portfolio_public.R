@@ -11,9 +11,9 @@ library(rootSolve)
 library(data.table)
 
 
-Ticks <- c("VWCE.DE", "VUAA.DE",  "XMME.DE",  "ZPRX.DE")
+Ticks <- c("IUSQ.DE", "SXR8.DE",  "IS3N.DE",  "ZPRX.DE", "ZPRV.DE")
 
-since = "2020-02-01"
+since = "2015-02-01"
 
 SPY <- ROC(Ad(to.monthly(getSymbols("^GSPC", auto.assign = F, from = since))), type = "discrete" )
 SPY[is.na(SPY)] <- 0
@@ -31,7 +31,10 @@ colnames(port) <- gsub(".Adjusted", "", names(port))
 port <- ROC(port, type = "discrete")
 port[is.na(port)] <- 0
 
+
 etfs <- port
+
+
 
 #cheeck correlations of etfs portfolio
 pairs.panels(etfs%>%data.frame())
@@ -103,7 +106,7 @@ coef_matrix <- coef_df_t[,-c(4,5)]%>%as.matrix()#%>%unname()
 #the betas we are after to fit
 betas = coef_matrix
 betas
-lower <- c(0.55, 0.2, 0.1)
+lower <- c(0.5, 0.2, 0.1)
 upper <- c(0.7, 0.4, 0.3)
 
 #' Create portfolio object
@@ -113,7 +116,7 @@ pspec <- portfolio.spec(assets=Ticks)
 lev_constr <- weight_sum_constraint(min_sum=0.99, max_sum=1.01)
 
 #' Box constraint, min and max weights
-lo_constr <- box_constraint(assets=pspec$assets, min=c(0.05, 0.05, 0.05, 0.05), max=0.65)
+lo_constr <- box_constraint(assets=pspec$assets, min=c(0.05, 0.05, 0.05, 0.05, 0.05), max=0.65)
 
 # Fama-French factor exposure constraint
 exp_constr <- factor_exposure_constraint(assets=Ticks, B=betas, lower=lower, upper=upper)
@@ -132,13 +135,17 @@ etl_obj <- portfolio_risk_objective(name="ETL")
 
 optb <- optimize.portfolio(R=etfs, portfolio=pspec, 
                            constraints=list(lev_constr,lo_constr, exp_constr,pl_constr), 
-                           objectives=list(ret_obj),  maxSTARR=TRUE,#this we can decide to include or not.
+                           objectives=list(ret_obj),  maxSR= T, maxSTARR=TRUE,#this we can decide to include or not.
                            optimize_method="DEoptim", search_size = 30000, maxiter=10000)
-#manually add weights
-etf_weights <- c(0.4, 0.3, 0.15, 0.15)
+
 #optimal weights from optb
 opt_weights <- optb$weights
 print(opt_weights)
+sum(opt_weights)
+
+#manually add weights
+etf_weights <- c(0.05, 0.17, 0.342, 0.318, 0.12)
+sum(etf_weights)
 
 #create the portfolio returns based on optimal weights  
 etf_port <- reclass(coredata(etfs)%*%opt_weights, match.to = etfs)
@@ -159,9 +166,18 @@ colnames(df_etf_stand) <- c("Date","man_returns")
 port_ret_factors <- merge(x=all_etfs_joined, y=c(df_etf, df_etf_stand), on = 'Date', all.x= F)
 
 # check some performance metrics
-charts.PerformanceSummary(merge(etf_port_pre, SPY))
+charts.PerformanceSummary(merge(etf_port_pre, etf_port, etfs$IUSQ.DE, SPY))
 charts.RollingPerformance(merge(etf_port_pre, SPY),  legend.loc = "topleft")
 charts.RollingPerformance(etf_port_pre-SPY,  legend.loc = "topleft")
+
+
+#Fama French 3 factors
+fama_french_factors%>%filter(Date >= since) -> subset_fama_french
+fff_zoo <- as.xts(subset_fama_french[, c("Mkt-RF", "SMB", "HML")], order.by = as.Date(subset_fama_french$Date))
+pairs.panels(fff_zoo%>%data.frame())
+
+charts.PerformanceSummary(fff_zoo)
+charts.RollingPerformance(fff_zoo, legend.loc = "topleft")
 
 #Check contitional value at risk
 CVaR(etfs)
@@ -170,7 +186,7 @@ CVaR(etf_port_pre)
 CVaR(SPY)
 
 # run a regression for the 3 factors on either the optimized weights returns or manual weights returns 
-five_factor_model <- lm(man_returns-RF ~ `Mkt-RF` + SMB + HML, data = port_ret_factors)
+five_factor_model <- lm(IUSQ.DE-RF ~ `Mkt-RF` + SMB + HML, data = port_ret_factors)
 summary(five_factor_model)
 
 
