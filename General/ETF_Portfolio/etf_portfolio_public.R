@@ -166,7 +166,7 @@ colnames(df_etf_stand) <- c("Date","man_returns")
 port_ret_factors <- merge(x=all_etfs_joined, y=c(df_etf, df_etf_stand), on = 'Date', all.x= F)
 
 # check some performance metrics
-charts.PerformanceSummary(merge(etf_port_pre, etf_port, etfs$IUSQ.DE, SPY))
+charts.PerformanceSummary(merge(etf_port_pre, etf_port, SPY))
 charts.RollingPerformance(merge(etf_port_pre, SPY),  legend.loc = "topleft")
 charts.RollingPerformance(etf_port_pre-SPY,  legend.loc = "topleft")
 
