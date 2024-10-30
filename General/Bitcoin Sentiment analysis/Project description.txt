@@ -10,8 +10,8 @@ re-compiling could lead to high frequency requests on google
 and several "human verifications" will be needed.
 
 Another script builds the feeling database reading the news
-from each day and extracting sentiments. A R script pulls the 
-bitcoin data and merges with the sentiment data. Finally, 
-a script performs data analysis. Correlations are observed, 
+from each day and extracting sentiments. A R script pulls
+and writes the bitcoin. Finally, a python script merges these
+data and performs data analysis. Correlations are observed, 
 but whether those can be trusted or not, is left as an exercise
 to the reader. A shell script, binds all together. 
