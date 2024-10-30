@@ -1,0 +1,17 @@
+The aim of this pedagogic project was to check whether the 
+news sentiment can predict the price, or return of bitcoin
+on a daily basis. It is not to be used as a trading and/or
+investment indicator, but rather as an interesting exercise
+to check if news affect this area of the stock market, and 
+specifically bitcoin. 
+
+A scrapper gets the news via google since 2017. Warning:
+re-compiling could lead to high frequency requests on google
+and several "human verifications" will be needed.
+
+Another script builds the feeling database reading the news
+from each day and extracting sentiments. A R script pulls the 
+bitcoin data and merges with the sentiment data. Finally, 
+a script performs data analysis. Correlations are observed, 
+but whether those can be trusted or not, is left as an exercise
+to the reader. A shell script, binds all together. 
