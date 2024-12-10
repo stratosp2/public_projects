@@ -11,7 +11,7 @@ library(rootSolve)
 library(data.table)
 
 
-Ticks <- c("IUSQ.DE", "SXR8.DE",  "IS3N.DE",  "ZPRX.DE", "ZPRV.DE")
+Ticks <- c("IUSQ.DE", "SXR8.DE",  "IS3N.DE", "ZPRV.DE")
 
 since = "2015-02-01"
 
@@ -116,7 +116,7 @@ pspec <- portfolio.spec(assets=Ticks)
 lev_constr <- weight_sum_constraint(min_sum=0.99, max_sum=1.01)
 
 #' Box constraint, min and max weights
-lo_constr <- box_constraint(assets=pspec$assets, min=c(0.05, 0.05, 0.05, 0.05, 0.05), max=0.65)
+lo_constr <- box_constraint(assets=pspec$assets, min=c(0.05, 0.05, 0.05, 0.05), max=0.65)
 
 # Fama-French factor exposure constraint
 exp_constr <- factor_exposure_constraint(assets=Ticks, B=betas, lower=lower, upper=upper)
@@ -135,7 +135,7 @@ etl_obj <- portfolio_risk_objective(name="ETL")
 
 optb <- optimize.portfolio(R=etfs, portfolio=pspec, 
                            constraints=list(lev_constr,lo_constr, exp_constr,pl_constr), 
-                           objectives=list(ret_obj),  maxSR= T, maxSTARR=TRUE,#this we can decide to include or not.
+                           objectives=list(ret_obj,etl_obj, var_obj),  maxSR= T, maxSTARR=TRUE,#this we can decide to include or not.
                            optimize_method="DEoptim", search_size = 30000, maxiter=10000)
 
 #optimal weights from optb
@@ -144,7 +144,7 @@ print(opt_weights)
 sum(opt_weights)
 
 #manually add weights
-etf_weights <- c(0.05, 0.17, 0.342, 0.318, 0.12)
+etf_weights <- c(0.12, 0.28, 0.3, 0.3)
 sum(etf_weights)
 
 #create the portfolio returns based on optimal weights  
