@@ -322,13 +322,6 @@ prod(1+annual_etf_port$Returns)
 
 end_value = 100*prod(1+annual_etf_port$Returns)
 
-# writing the function
-f1 = function(x) {
-  100*(x^abs(investment_years)) - end_value
-}
-roots = uniroot.all(f1, c(0, 3))
-
-
 annualised_return = round((tail(df_inv$lump_sum)[6]/total_invest)^abs(1/investment_years)-1,4)*100
 
 
