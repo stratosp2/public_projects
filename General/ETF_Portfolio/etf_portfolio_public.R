@@ -96,6 +96,16 @@ colnames(std_df) <- colnames(port)
 std_df$Coefficients <-c("Intercept","Mkt-RF", "SMB","HML","RMW","CMA")
 
 
+coef_melted_data <- coef_df%>%pivot_longer(!Coefficients,names_to = "Ticker",values_to = "Values")
+
+std_melted_data <- std_df%>%pivot_longer(!Coefficients,names_to = "Ticker",values_to = "Std")
+
+merged_data <- merge(coef_melted_data, std_melted_data, on = c("Ticker", "Coefficients"))
+
+ggplot(merged_data, aes(x = Coefficients , y = Values, color = Ticker)) + geom_point(size=5) +
+  ggtitle("Fama French 3 factor coefficients") + ylab("Values")+ 
+  geom_errorbar(aes(x = Coefficients ,ymin=Values-Std, ymax=Values+Std, color = Ticker), width=0.2)
+
 
 #transpose the dataframe except for the first row (intercept alpha) and last column (n+1)
 coef_df_t <- coef_df[-1,-(n+1)]%>%t()
@@ -116,7 +126,7 @@ pspec <- portfolio.spec(assets=Ticks)
 lev_constr <- weight_sum_constraint(min_sum=0.99, max_sum=1.01)
 
 #' Box constraint, min and max weights
-lo_constr <- box_constraint(assets=pspec$assets, min=c(0.05, 0.05, 0.05, 0.05), max=0.65)
+lo_constr <- box_constraint(assets=pspec$assets, min=c(0.05, 0.05, 0.05,0.05), max=0.65)
 
 # Fama-French factor exposure constraint
 exp_constr <- factor_exposure_constraint(assets=Ticks, B=betas, lower=lower, upper=upper)
@@ -135,7 +145,7 @@ etl_obj <- portfolio_risk_objective(name="ETL")
 
 optb <- optimize.portfolio(R=etfs, portfolio=pspec, 
                            constraints=list(lev_constr,lo_constr, exp_constr,pl_constr), 
-                           objectives=list(ret_obj,etl_obj, var_obj),  maxSR= T, maxSTARR=TRUE,#this we can decide to include or not.
+                           objectives=list(ret_obj, var_obj),  maxSR= T, maxSTARR=TRUE,#this we can decide to include or not.
                            optimize_method="DEoptim", search_size = 30000, maxiter=10000)
 
 #optimal weights from optb
@@ -144,7 +154,7 @@ print(opt_weights)
 sum(opt_weights)
 
 #manually add weights
-etf_weights <- c(0.12, 0.28, 0.3, 0.3)
+etf_weights <- c(0.15, 0.25, 0.3, 0.3)
 sum(etf_weights)
 
 #create the portfolio returns based on optimal weights  
@@ -186,7 +196,7 @@ CVaR(etf_port_pre)
 CVaR(SPY)
 
 # run a regression for the 3 factors on either the optimized weights returns or manual weights returns 
-five_factor_model <- lm(IUSQ.DE-RF ~ `Mkt-RF` + SMB + HML, data = port_ret_factors)
+five_factor_model <- lm(man_returns-RF ~ `Mkt-RF` + SMB + HML, data = port_ret_factors)
 summary(five_factor_model)
 
 
@@ -318,13 +328,15 @@ f1 = function(x) {
 }
 roots = uniroot.all(f1, c(0, 3))
 
-annualised_return = round(100*(roots-1),2)
+
+annualised_return = round((tail(df_inv$lump_sum)[6]/total_invest)^abs(1/investment_years)-1,4)*100
+
 
 ggplot()+ geom_line(data = df_inv, aes(x=Date, y = exp_returns, color =paste0("Average dollar: ", avg_gain)))+
   geom_line(data = df_inv, aes(x=Date, y = lump_sum, color = paste0("Lump sum: ", ls_gain)))+theme_bw()+
   # geom_line(data = df_etf, aes(x=Date, y = market_lump_sum, color = paste0("SPY Lump sum: ", mkt_ls_gain)))+
   # geom_line(data = df_etf, aes(x=Date, y = investments, color = paste0("investment AVD")), linetype="dashed")+
   labs(x= "Date", y = "Money return", color = "Strategies and gains:") + 
-  ggtitle(paste0("Lump sum vs average dollar strategies: ", round(investment_years,0), " years, and ", months, " months. Total invest ", total_invest, ", anualised return ", annualised_return,"%"))+
+  ggtitle(paste0("Lump sum vs average dollar strategies: ", round(investment_years,0), " years, and ", months, " months. Total invest ", total_invest, ", anualised return for lump sum: ", annualised_return,"%"))+
   theme(legend.position = "top")
 
