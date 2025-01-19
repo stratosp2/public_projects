@@ -218,47 +218,78 @@ hist(nd, breaks = 300,
 #generate future expectations
 set.seed(0)
 nmonths <- 36
-returns <- as.numeric(etf_port_pre$man_returns)
+returns <- as.numeric(which_port$returns)
 #sample to be Montme carlo. mean(paths) -> mean(returns) as n>>1. See documentation ?sample()
-paths <- replicate(n=5000, 
+paths <- replicate(n=10000, 
                    expr = sample(returns, nmonths, replace = T)) # (.,x,.) x is the size of the sample and future
-# apply commulative sum in columns -> (.,2,.)
-paths <- apply(paths, 2, cumsum)
+
+# pass the cumprod function for all n paths
+paths <- apply(paths, 2, function(column) cumprod(1 + column)-1)
+
 #prepare
 paths <- data.table(paths)
+
 paths$months <- 1:nrow(paths)
 paths <- melt(paths, id.vars = "months")
 
 MC_mean <- round(mean(paths$value),3)
 MC_sd <- round(sd(paths$value),3)
 
-p_nq <- round(pnorm(q = 0, mean = MC_mean, sd = MC_sd),4)
+mean_end <- round(mean(paths$value[paths$months== nmonths]),4)*100
+sd_end <- round(sd(paths$value[paths$months== nmonths]),4)*100
 
-# Mean of negative cumulative prod's?
-mn_nq <- mean(paths$value[paths$months == nmonths]<0)
+# Probability to  have negative retults
+mn_nq <- round(mean(paths$value[paths$months == nmonths]<0), 4)
 mn_nq
 
-mean_end <- round(mean(paths$value[paths$months== nmonths]),4)
+#subset for negative values to calculate the mean
+negative_values <- paths$value[paths$months == nmonths & paths$value < 0]
 
-ggplot(paths, aes(x = months, y = value, col = variable)) + geom_line() + 
-  theme_bw() + theme(legend.position = "none") +
+#mean of negative cummkulative returns
+avg_neg <- negative_values%>%mean()%>%round(4)*100
+
+#get the last nmonths returns of portfolio to calculate where we are. 
+last_returns <- tail(which_port, nmonths)
+months <- 1:nmonths
+
+last_36_months <- data.frame(
+  months = months,
+  value = cumprod(1+last_returns)-1,
+  variable = "last_36_months"
+)
+
+#current cummulative return of portfolio after nmonths 
+current_cumulative = round(last_36_months$returns%>%tail(1),4)*100
+
+
+ggplot(paths, aes(x = months, y = value, col = variable)) + geom_line() +theme_bw() + theme(legend.position = "none") +
   labs(x = "Months", y = "Cummulative returns", 
-       title = paste("Monte Carlo for future returns, mean end:", mean_end*100,"%",
-                     ". P for negative cummulative returns:",p_nq*100,
-                     "%, average negative returns:-", mn_nq*100, "%"))
+       title = paste("MC simulation for portfolio, end mean:",
+                     mean_end, "%. P for negative cummulative returns:",
+                     mn_nq*100,"% with avg loss:", abs(avg_neg),"%.","Bold line port returns:",current_cumulative,"%"))+
+  geom_line(data = last_36_months, aes(x = months, y = returns), color = "black", size = 1.2)
+#geom_line(last_returns$returns)
 
-#mean of cum prods more than 30%
-mn_03 <- mean(paths$value[paths$months == nmonths]>=0.3)
-mn_03
 
-hist(paths$value[paths$months== nmonths], breaks = 200, 
-    main = paste("Histogram of cummulative returns after", nmonths, "months of portfolio. Mean:", mean_end*100,"%"),
+normal <- paths$value[paths$months == nmonths]
+
+hist(normal, prob = T, breaks = 200, 
+     main = paste("Histogram of cummulative returns after", nmonths, "months of portfolio, mean:", mean_end, ", sd:", sd_end),
      xlab = "Cummulative return", 
      col = "magenta")
 
-#probability to be more than q. Note the lower.tail=F argument.
-p_ps <- round(pnorm(q = 0.3, mean = MC_mean, sd = MC_sd, lower.tail = FALSE),4)
-p_ps
+x <- seq(min(normal), max(normal), length =100)
+l <- dnorm(x, mean = mean(normal), sd = sd(normal))
+sigma_m <- abline(v = mean(normal)-sd(normal), lwd =2)
+sigma_p <- abline(v = mean(normal)+sd(normal), lwd =2)
+lines(x,l, col = "black", lwd=2)
+
+#mprobability to end more than 30%
+mn_03 <- round(mean(paths$value[paths$months == nmonths]>=0.3),4)*100
+mn_03
+# Probability to have more than q cumulative returns at the end 
+mn_q <- round(mean(paths$value[paths$months == nmonths]>0.5), 4)*100
+mn_q
 
 ############################# End of Monte Carlo ####################################
 
