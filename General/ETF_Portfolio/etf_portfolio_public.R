@@ -154,7 +154,7 @@ print(opt_weights)
 sum(opt_weights)
 
 #manually add weights
-etf_weights <- c(0.15, 0.25, 0.3, 0.3)
+etf_weights <- c(0.1, 0.3, 0.3, 0.3)
 sum(etf_weights)
 
 #create the portfolio returns based on optimal weights  
@@ -181,6 +181,8 @@ charts.RollingPerformance(merge(etf_port_pre, SPY),  legend.loc = "topleft")
 charts.RollingPerformance(etf_port_pre-SPY,  legend.loc = "topleft")
 
 
+#since = "Jul 1963"
+
 #Fama French 3 factors
 fama_french_factors%>%filter(Date >= since) -> subset_fama_french
 fff_zoo <- as.xts(subset_fama_french[, c("Mkt-RF", "SMB", "HML")], order.by = as.Date(subset_fama_french$Date))
@@ -203,8 +205,10 @@ summary(five_factor_model)
 ###################### Monte Carlo for portfolio #################################
 
 #mean and stantard deviation of returns
-mn <- mean(etf_port_pre)
-std <- sd(etf_port_pre) 
+which_port = etf_port_pre
+colnames(which_port) <- "returns"
+mn <- mean(etf_port)
+std <- sd(etf_port) 
 
 
 #create a normal distribution from these 
@@ -301,7 +305,7 @@ mn_q
 ##
 ## Calculate investments
 ##
-df_inv <- etf_port_pre%>%fortify.zoo %>%data.frame()
+df_inv <- which_port%>%fortify.zoo %>%data.frame()
 colnames(df_inv) <- c("Date","returns")
 total_invest = 10000
 
@@ -310,7 +314,7 @@ add = round(total_invest/length(df_inv$Date),0)
 
 start = add
 
-df_inv$cum_returns <- cumsum(df_inv$returns)
+df_inv$cum_returns <- (cumprod(1+df_inv$returns)-1)%>%round(4)
 df_inv$investments <- start
 df_inv$exp_returns<- start
 
@@ -347,11 +351,11 @@ annual_etf_port <- data.frame(dates = df_inv$Date, monthly_returns = df_inv$retu
 colnames(annual_etf_port) <- c("Year", "Returns")
 
 ggplot(annual_etf_port, aes(Year, Returns, fill = Returns))+geom_col()+
-  scale_fill_gradient(low="red", high="green") +ggtitle("Yearly returns of our portfolio")
-
-prod(1+annual_etf_port$Returns)
+  scale_fill_gradient(low="red", high="green") +ggtitle("Yearly returns of our portfolio")+
+  geom_text(aes(label = round(Returns*100,2)), vjust = -0.5)
 
 end_value = 100*prod(1+annual_etf_port$Returns)
+
 
 annualised_return = round((tail(df_inv$lump_sum)[6]/total_invest)^abs(1/investment_years)-1,4)*100
 
