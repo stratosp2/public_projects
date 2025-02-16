@@ -277,9 +277,6 @@ df_inv <- df_inv%>%drop_na()
 
 df_inv$lump_sum <- total_invest*(1+df_inv$cum_returns)
 
-length(df_inv$Date)
-df_inv$market_lump_sum <- total_invest*(1+cumsum(SPY$SPY))
-
 avg_gain <- round(tail(df_inv$exp_returns)[6]-total_invest, 3)
 ls_gain <- round(tail(df_inv$lump_sum)[6]-total_invest,3)
 mkt_ls_gain <- round(tail(df_inv$market_lump_sum)[6]-total_invest,3)
