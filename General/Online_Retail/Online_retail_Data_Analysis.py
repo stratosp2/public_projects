@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Fri Jul  4 08:30:33 2025
-
-@author: stratos
-"""
 
 from ucimlrepo import fetch_ucirepo 
 import pandas as pd
