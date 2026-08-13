@@ -1,0 +1,40 @@
+# ===== OS junk =====
+# macOS
+.DS_Store
+._*
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# ===== Editors / IDEs =====
+.vscode/*
+.vscode/!extensions.json
+.idea/
+*.swp
+*~
+
+# ===== R session files =====
+.Rhistory
+.RData
+.Rproj.user/
+
+# ===== Build / tool artifacts =====
+chromedriver.exe
+*.exe
+
+# ===== Secrets =====
+*.key
+*.pem
+*.jks
+*.p12
+*.pfx
+.env
+.env.*
+!*.example
+
+# ===== Microcontrollers / PlatformIO =====
+# PlatformIO build output (weather_data_gsheets_esp32)
+.pio/
