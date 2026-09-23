@@ -17,25 +17,21 @@ included.
 
 ### General
 
-- **AUDeuro** — automated R script that pulls the AUD→EUR exchange rate, runs
-  elementary econometric analysis and produces ARIMA forecasts.
 - **Bitcoin Sentiment analysis** — pedagogical study of whether daily news
-  sentiment can predict Bitcoin's price/return. A scrapper pulls news via
-  Google (since 2017), scripts build a sentiment database, and analysis looks
-  for correlations. *Not* a trading indicator.
+  sentiment can predict Bitcoin's price/return. Scripts pull news via Google
+  (since 2017), build a sentiment database, and analysis looks for
+  correlations. *Not* a trading indicator. (Scripts only — the scraped news
+  corpus and raw data are not committed.)
 - **ETF_Portfolio** — constructs an ETF portfolio with statistically
   significant exposure to Fama–French factors (Mkt-RF, SMB, HML), benchmarked
   against the S&P 500 since February 2015.
-- **Olive_oil** — Python scrapper pulls olive-oil prices to CSV; an R script
-  runs data analysis and basic price forecasts.
-- **Online_Retail** — data analysis of an online retail dataset: revenue by
-  country/month, top products, returns likelihood and a prediction model.
+- **Olives** — olive-yield forecasting for Nea Zichni, Greece: web-scraped
+  cultivation data, a trained ML model and a FastAPI backend with a web
+  frontend. Also lives as its own repo ([olives](https://github.com/stratosp2/olives),
+  with a GitHub Pages frontend).
 
 ### Microcontrollers
 
-- **GPS_logger** — battery-powered ESP32 with a GPS module, temperature/
-  pressure sensor, TFT screen and SD module; records GPS and barometric data
-  for meta-analysis and map creation.
 - **weather_data_gsheets_esp32** — solar-powered ESP32 with temperature,
   humidity, pressure, rain and wind sensors. Stays in deep sleep, wakes hourly,
   takes measurements and logs to a Google Sheet.
@@ -50,5 +46,6 @@ Python, R, C++ (Arduino/PlatformIO), shell — depending on the project.
 
 ## Note
 
-The **Bitcoin Sentiment analysis** project contains a large historical news
-corpus (`hist_news/`), which is why this repository is large.
+The **Bitcoin Sentiment analysis** project ships scripts only; the scraped
+news corpus and raw data are deliberately not committed to keep the repo
+light.
