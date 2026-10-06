@@ -4,14 +4,13 @@
 ._*
 .AppleDouble
 .LSOverride
-
 # Windows
 Thumbs.db
 Desktop.ini
 
-# ===== Editors / IDEs =====
-.vscode/*
-.vscode/!extensions.json
+# ===== Editors / IDE =====
+.vscode/**
+!*.example
 .idea/
 *.swp
 *~
@@ -22,6 +21,7 @@ Desktop.ini
 .Rproj.user/
 
 # ===== Build / tool artifacts =====
+.pio/
 chromedriver.exe
 *.exe
 
@@ -34,7 +34,3 @@ chromedriver.exe
 .env
 .env.*
 !*.example
-
-# ===== Microcontrollers / PlatformIO =====
-# PlatformIO build output (weather_data_gsheets_esp32)
-.pio/
